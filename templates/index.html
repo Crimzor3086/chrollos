@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Bot Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .card {
+            background-color: #2d2d2d;
+            border: none;
+            margin-bottom: 1rem;
+        }
+        .card-header {
+            background-color: #3d3d3d;
+            border-bottom: 1px solid #4d4d4d;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        .btn-success {
+            background-color: #198754;
+            border-color: #198754;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-running {
+            background-color: #198754;
+        }
+        .status-stopped {
+            background-color: #dc3545;
+        }
+        .price-up {
+            color: #198754;
+        }
+        .price-down {
+            color: #dc3545;
+        }
+        .chart-container {
+            height: 400px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="text-center">Trading Bot Dashboard</h1>
+                <p class="text-center text-muted" id="last-update"></p>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Trading Status Card -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Trading Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>Bot Status:</strong>
+                            <span id="bot-status-indicator" class="status-indicator status-stopped"></span>
+                            <span id="bot-status-text">Stopped</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Position:</strong>
+                            <span id="position-status">None</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Entry Price:</strong>
+                            <span id="entry-price">N/A</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Current Price:</strong>
+                            <span id="current-price">N/A</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>PnL:</strong>
+                            <span id="pnl">N/A</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Balance Card -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Account Balance</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>USDT Balance:</strong>
+                            <span id="usdt-balance">N/A</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>BTC Balance:</strong>
+                            <span id="btc-balance">N/A</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls Card -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Bot Controls</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button id="start-bot" class="btn btn-success">
+                                <i class="bi bi-play-fill"></i> Start Bot
+                            </button>
+                            <button id="stop-bot" class="btn btn-danger" disabled>
+                                <i class="bi bi-stop-fill"></i> Stop Bot
+                            </button>
+                            <button id="close-position" class="btn btn-warning">
+                                <i class="bi bi-x-circle"></i> Close Position
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Market Data Card -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Market Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Timeframe</th>
+                                        <th>Open</th>
+                                        <th>High</th>
+                                        <th>Low</th>
+                                        <th>Close</th>
+                                        <th>Volume</th>
+                                        <th>Last Update</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="market-data-table">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Charts Card -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Charts</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <iframe id="price-chart" style="width: 100%; height: 100%; border: none;"></iframe>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <iframe id="quality-chart" style="width: 100%; height: 100%; border: none;"></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Update intervals
+        const STATUS_UPDATE_INTERVAL = 1000;  // 1 second
+        const MARKET_DATA_UPDATE_INTERVAL = 5000;  // 5 seconds
+        const CHART_UPDATE_INTERVAL = 30000;  // 30 seconds
+
+        // Bot control functions
+        async function startBot() {
+            const response = await fetch('/api/start_bot', { method: 'POST' });
+            const data = await response.json();
+            if (data.status === 'success') {
+                document.getElementById('start-bot').disabled = true;
+                document.getElementById('stop-bot').disabled = false;
+                document.getElementById('bot-status-indicator').className = 'status-indicator status-running';
+                document.getElementById('bot-status-text').textContent = 'Running';
+            }
+        }
+
+        async function stopBot() {
+            const response = await fetch('/api/stop_bot', { method: 'POST' });
+            const data = await response.json();
+            if (data.status === 'success') {
+                document.getElementById('start-bot').disabled = false;
+                document.getElementById('stop-bot').disabled = true;
+                document.getElementById('bot-status-indicator').className = 'status-indicator status-stopped';
+                document.getElementById('bot-status-text').textContent = 'Stopped';
+            }
+        }
+
+        async function closePosition() {
+            // Implement close position functionality
+        }
+
+        // Update functions
+        async function updateStatus() {
+            const response = await fetch('/api/bot_status');
+            const data = await response.json();
+            
+            document.getElementById('position-status').textContent = data.position || 'None';
+            document.getElementById('entry-price').textContent = data.entry_price ? `$${data.entry_price.toFixed(2)}` : 'N/A';
+            document.getElementById('current-price').textContent = `$${data.current_price.toFixed(2)}`;
+            
+            if (data.position && data.entry_price) {
+                const pnl = ((data.current_price - data.entry_price) / data.entry_price) * 100;
+                const pnlElement = document.getElementById('pnl');
+                pnlElement.textContent = `${pnl.toFixed(2)}%`;
+                pnlElement.className = pnl >= 0 ? 'price-up' : 'price-down';
+            } else {
+                document.getElementById('pnl').textContent = 'N/A';
+            }
+        }
+
+        async function updateMarketData() {
+            const response = await fetch('/api/market_data');
+            const data = await response.json();
+            
+            const tableBody = document.getElementById('market-data-table');
+            tableBody.innerHTML = '';
+            
+            for (const [interval, values] of Object.entries(data)) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${interval}</td>
+                    <td>$${values.open.toFixed(2)}</td>
+                    <td>$${values.high.toFixed(2)}</td>
+                    <td>$${values.low.toFixed(2)}</td>
+                    <td>$${values.close.toFixed(2)}</td>
+                    <td>${values.volume.toFixed(2)}</td>
+                    <td>${new Date(values.timestamp).toLocaleString()}</td>
+                `;
+                tableBody.appendChild(row);
+            }
+        }
+
+        async function updateCharts() {
+            const response = await fetch('/api/update_charts');
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                document.getElementById('price-chart').src = data.chart_path;
+                document.getElementById('quality-chart').src = data.dashboard_path;
+            }
+        }
+
+        async function updateAccountBalance() {
+            const response = await fetch('/api/account_balance');
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                document.getElementById('usdt-balance').textContent = `$${data.balance.toFixed(2)}`;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('start-bot').addEventListener('click', startBot);
+        document.getElementById('stop-bot').addEventListener('click', stopBot);
+        document.getElementById('close-position').addEventListener('click', closePosition);
+
+        // Start update intervals
+        setInterval(updateStatus, STATUS_UPDATE_INTERVAL);
+        setInterval(updateMarketData, MARKET_DATA_UPDATE_INTERVAL);
+        setInterval(updateCharts, CHART_UPDATE_INTERVAL);
+        setInterval(updateAccountBalance, STATUS_UPDATE_INTERVAL);
+
+        // Initial updates
+        updateStatus();
+        updateMarketData();
+        updateCharts();
+        updateAccountBalance();
+    </script>
+</body>
+</html> 
