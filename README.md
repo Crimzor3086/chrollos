@@ -159,3 +159,4 @@ This trading bot is for educational purposes only. Use at your own risk. Cryptoc
 
 For support, please open an issue in the GitHub repository or contact the maintainers.
 # chrollos
+# chrollos
