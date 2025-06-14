@@ -190,15 +190,21 @@ class TradingBot:
             return None
 
         try:
-            # Calculate technical features
-            df_features = calculate_technical_features(df)
+            # Calculate technical features using only the features the model was trained with
+            df_features = calculate_technical_features(df.copy())
             
-            # Get feature columns (excluding timestamp and price columns)
-            feature_columns = [col for col in df_features.columns if col not in 
-                             ['timestamp', 'open', 'high', 'low', 'close', 'volume']]
+            # Define the exact features used during training
+            expected_features = [
+                'sma_fast', 'sma_slow', 'rsi', 'macd', 'macd_signal', 
+                'macd_diff', 'bb_upper', 'bb_middle', 'bb_lower', 
+                'bb_width', 'bb_pband'
+            ]
             
-            # Get the latest data point
-            latest_features = df_features[feature_columns].iloc[-1:].values
+            # Create a new DataFrame with only the expected features in the correct order
+            latest_features = pd.DataFrame(
+                df_features[expected_features].iloc[-1:].values,
+                columns=expected_features
+            )
             
             # Scale features using the pre-trained scaler
             scaled_features = self.scaler.transform(latest_features)
@@ -258,6 +264,17 @@ class TradingBot:
         if not data_dict:
             return
 
+        # Log the latest market data for each timeframe
+        for interval, df in data_dict.items():
+            if not df.empty:
+                latest = df.iloc[-1]
+                logging.info(f"Latest {interval} data for {self.symbol}: "
+                           f"Open={latest['open']:.2f}, "
+                           f"High={latest['high']:.2f}, "
+                           f"Low={latest['low']:.2f}, "
+                           f"Close={latest['close']:.2f}, "
+                           f"Volume={latest['volume']:.2f}")
+
         # Check stop loss and take profit levels
         self.check_stop_loss_take_profit()
 
@@ -267,6 +284,7 @@ class TradingBot:
             sma_signal = sma_strategy(df)
             ml_signal = self.get_ml_signal(df)
             signals[interval] = {'sma': sma_signal, 'ml': ml_signal}
+            logging.info(f"{interval} signals - SMA: {sma_signal}, ML: {ml_signal}")
 
         # Combine signals (require agreement across timeframes)
         buy_signals = sum(1 for s in signals.values() 

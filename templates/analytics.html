@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Chrollo AI Tradebot</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        :root {
+            --primary-dark: #18130a;
+            --secondary-dark: #222016;
+            --accent-gold: #ffd700;
+            --accent-gold-hover: #bfa14a;
+            --accent-red: #b86c25;
+            --text-light: #fff8e1;
+            --neon-blue: #00f3ff;
+            --neon-purple: #b388ff;
+        }
+
+        body {
+            background-color: var(--primary-dark);
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .top-bar {
+            background-color: var(--secondary-dark);
+            border-bottom: 1px solid var(--accent-gold);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--neon-blue);
+        }
+
+        .card {
+            background-color: var(--secondary-dark);
+            border: 1px solid var(--accent-gold);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background-color: rgba(191, 161, 74, 0.1);
+            border-bottom: 1px solid var(--accent-gold);
+            padding: 1rem;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .card-title {
+            color: var(--accent-gold);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .chart-container {
+            height: 400px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--accent-gold);
+            border-radius: 12px;
+            background: var(--primary-dark);
+            padding: 1rem;
+        }
+
+        .metric-card {
+            background-color: rgba(191, 161, 74, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent-gold);
+        }
+
+        .metric-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-gold);
+            border-color: var(--accent-gold);
+            color: var(--primary-dark);
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-gold-hover);
+            border-color: var(--accent-gold-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline-primary {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--accent-gold);
+            color: var(--primary-dark);
+        }
+
+        .heatmap {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            padding: 1rem;
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .heatmap-cell[data-intensity="0"] { background-color: rgba(191, 161, 74, 0.1); }
+        .heatmap-cell[data-intensity="1"] { background-color: rgba(191, 161, 74, 0.2); }
+        .heatmap-cell[data-intensity="2"] { background-color: rgba(191, 161, 74, 0.3); }
+        .heatmap-cell[data-intensity="3"] { background-color: rgba(191, 161, 74, 0.4); }
+        .heatmap-cell[data-intensity="4"] { background-color: rgba(191, 161, 74, 0.5); }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <a href="/" class="logo">
+                        <i class="bi bi-cpu"></i> Chrollo AI
+                    </a>
+                </div>
+                <div class="col-md-4 text-center">
+                    <h4 class="mb-0">Analytics</h4>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="/" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid py-4">
+        <!-- Performance Overview -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title">Performance Overview</h5>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-primary active" data-period="1d">1D</button>
+                            <button class="btn btn-outline-primary" data-period="1w">1W</button>
+                            <button class="btn btn-outline-primary" data-period="1m">1M</button>
+                            <button class="btn btn-outline-primary" data-period="3m">3M</button>
+                            <button class="btn btn-outline-primary" data-period="1y">1Y</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="performance-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="max-drawdown">-15.2%</div>
+                    <div class="metric-label">Max Drawdown</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-hold-time">2.5h</div>
+                    <div class="metric-label">Average Hold Time</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-roi">3.8%</div>
+                    <div class="metric-label">Average ROI per Trade</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="win-rate">68%</div>
+                    <div class="metric-label">Win Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Analysis -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Market Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="market-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Volatility Heatmap</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="heatmap" id="volatility-heatmap">
+                            <!-- Heatmap cells will be generated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Performance -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Asset Performance Breakdown</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="asset-performance-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Options -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Export Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-primary w-100 mb-2" id="export-csv">
+                                    <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-primary w-100 mb-2" id="export-pdf">
+                                    <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-primary w-100 mb-2" id="share-advisor">
+                                    <i class="bi bi-share"></i> Share with Advisor
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize charts
+        function initializeCharts() {
+            // Performance Chart
+            const performanceCtx = document.getElementById('performance-chart').getContext('2d');
+            new Chart(performanceCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => new Date(Date.now() - (23-i) * 3600000)),
+                    datasets: [{
+                        label: 'Portfolio Value',
+                        data: Array.from({length: 24}, () => Math.random() * 1000 + 9000),
+                        borderColor: '#ffd700',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(255, 215, 0, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff8e1'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                color: '#fff8e1'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour'
+                            },
+                            ticks: {
+                                color: '#fff8e1'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Market Chart
+            const marketCtx = document.getElementById('market-chart').getContext('2d');
+            new Chart(marketCtx, {
+                type: 'candlestick',
+                data: {
+                    datasets: [{
+                        label: 'BTC/USDT',
+                        data: Array.from({length: 24}, (_, i) => ({
+                            x: new Date(Date.now() - (23-i) * 3600000),
+                            o: Math.random() * 1000 + 9000,
+                            h: Math.random() * 1000 + 9500,
+                            l: Math.random() * 1000 + 8500,
+                            c: Math.random() * 1000 + 9000
+                        }))
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff8e1'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                color: '#fff8e1'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour'
+                            },
+                            ticks: {
+                                color: '#fff8e1'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Asset Performance Chart
+            const assetCtx = document.getElementById('asset-performance-chart').getContext('2d');
+            new Chart(assetCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['BTC', 'ETH', 'BNB', 'SOL', 'ADA'],
+                    datasets: [{
+                        label: 'Performance',
+                        data: [12.5, 8.3, -2.1, 15.7, 5.4],
+                        backgroundColor: [
+                            '#ffd700',
+                            '#00f3ff',
+                            '#b388ff',
+                            '#b86c25',
+                            '#ff6b6b'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                color: '#fff8e1'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#fff8e1'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize volatility heatmap
+        function initializeHeatmap() {
+            const heatmap = document.getElementById('volatility-heatmap');
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const hours = Array.from({length: 24}, (_, i) => i);
+
+            days.forEach(day => {
+                hours.forEach(hour => {
+                    const cell = document.createElement('div');
+                    cell.className = 'heatmap-cell';
+                    cell.setAttribute('data-intensity', Math.floor(Math.random() * 5));
+                    cell.textContent = `${day}\n${hour}:00`;
+                    heatmap.appendChild(cell);
+                });
+            });
+        }
+
+        // Initialize charts and heatmap when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeCharts();
+            initializeHeatmap();
+        });
+
+        // Period selection
+        document.querySelectorAll('[data-period]').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                // Update charts with new period data
+                // This would typically involve an API call to get new data
+            });
+        });
+
+        // Export functionality
+        document.getElementById('export-csv').addEventListener('click', async function() {
+            try {
+                const response = await fetch('/api/export/csv');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'trading-analytics.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            } catch (error) {
+                console.error('Error exporting CSV:', error);
+                alert('Error exporting data. Please try again.');
+            }
+        });
+
+        document.getElementById('export-pdf').addEventListener('click', async function() {
+            try {
+                const response = await fetch('/api/export/pdf');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'trading-analytics.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            } catch (error) {
+                console.error('Error exporting PDF:', error);
+                alert('Error exporting data. Please try again.');
+            }
+        });
+
+        document.getElementById('share-advisor').addEventListener('click', async function() {
+            try {
+                const response = await fetch('/api/share/advisor', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    alert('Report shared successfully with your advisor!');
+                } else {
+                    alert('Error sharing report: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error sharing report:', error);
+                alert('Error sharing report. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html> 

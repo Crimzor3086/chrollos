@@ -3,191 +3,367 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Bot Dashboard</title>
+    <title>Chrollo AI Tradebot</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
     <style>
+        :root {
+            --primary-dark: #18130a;
+            --secondary-dark: #222016;
+            --accent-gold: #ffd700;
+            --accent-gold-hover: #bfa14a;
+            --accent-red: #b86c25;
+            --text-light: #fff8e1;
+            --neon-blue: #00f3ff;
+            --neon-purple: #b388ff;
+        }
+
         body {
-            background-color: #1a1a1a;
-            color: #ffffff;
+            background-color: var(--primary-dark);
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
         }
+
+        /* Top Bar Styles */
+        .top-bar {
+            background-color: var(--secondary-dark);
+            border-bottom: 1px solid var(--accent-gold);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--neon-blue);
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .status-live {
+            background-color: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+            border: 1px solid #00ff00;
+        }
+
+        .status-offline {
+            background-color: rgba(255, 0, 0, 0.1);
+            color: #ff0000;
+            border: 1px solid #ff0000;
+        }
+
+        /* Card Styles */
         .card {
-            background-color: #2d2d2d;
-            border: none;
-            margin-bottom: 1rem;
+            background-color: var(--secondary-dark);
+            border: 1px solid var(--accent-gold);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         .card-header {
-            background-color: #3d3d3d;
-            border-bottom: 1px solid #4d4d4d;
+            background-color: rgba(191, 161, 74, 0.1);
+            border-bottom: 1px solid var(--accent-gold);
+            padding: 1rem;
+            border-radius: 12px 12px 0 0;
         }
+
+        .card-title {
+            color: var(--accent-gold);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        /* Button Styles */
         .btn-primary {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
+            background-color: var(--accent-gold);
+            border-color: var(--accent-gold);
+            color: var(--primary-dark);
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
         }
+
+        .btn-primary:hover {
+            background-color: var(--accent-gold-hover);
+            border-color: var(--accent-gold-hover);
+            transform: translateY(-1px);
+        }
+
         .btn-danger {
-            background-color: #dc3545;
-            border-color: #dc3545;
+            background-color: var(--accent-red);
+            border-color: var(--accent-red);
         }
-        .btn-success {
-            background-color: #198754;
-            border-color: #198754;
-        }
-        .status-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-        .status-running {
-            background-color: #198754;
-        }
-        .status-stopped {
-            background-color: #dc3545;
-        }
-        .price-up {
-            color: #198754;
-        }
-        .price-down {
-            color: #dc3545;
-        }
+
+        /* Chart Container */
         .chart-container {
             height: 400px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--accent-gold);
+            border-radius: 12px;
+            background: var(--primary-dark);
+            padding: 1rem;
+        }
+
+        /* Table Styles */
+        .table-dark {
+            background-color: var(--secondary-dark);
+            color: var(--text-light);
+        }
+
+        .table-dark th {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+            font-weight: 600;
+        }
+
+        .table-dark td {
+            border-color: rgba(191, 161, 74, 0.2);
+        }
+
+        /* Form Controls */
+        .form-control, .form-select {
+            background-color: var(--primary-dark);
+            border: 1px solid var(--accent-gold);
+            color: var(--text-light);
+            border-radius: 8px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: var(--primary-dark);
+            border-color: var(--neon-blue);
+            color: var(--text-light);
+            box-shadow: 0 0 0 0.25rem rgba(0, 243, 255, 0.25);
+        }
+
+        /* Notifications */
+        .notification {
+            padding: 1rem;
+            border-radius: 8px;
             margin-bottom: 1rem;
+            border-left: 4px solid;
+        }
+
+        .notification-info {
+            background-color: rgba(0, 243, 255, 0.1);
+            border-left-color: var(--neon-blue);
+        }
+
+        .notification-warning {
+            background-color: rgba(255, 211, 0, 0.1);
+            border-left-color: var(--accent-gold);
+        }
+
+        .notification-danger {
+            background-color: rgba(184, 108, 37, 0.1);
+            border-left-color: var(--accent-red);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .top-bar {
+                padding: 0.5rem 0;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            background: var(--secondary-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-gold);
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <a href="/" class="logo">
+                        <i class="bi bi-cpu"></i> Chrollo AI
+                    </a>
+                </div>
+                <div class="col-md-4 text-center">
+                    <span id="bot-status-badge" class="status-badge status-offline">
+                        <i class="bi bi-circle-fill"></i> OFFLINE
+                    </span>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="accountDropdown" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> Account
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+                            <li><span class="dropdown-item-text">Balance: <span id="account-balance">$0.00</span></span></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear"></i> Settings</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container-fluid py-4">
+        <!-- Portfolio Overview -->
         <div class="row mb-4">
-            <div class="col">
-                <h1 class="text-center">Trading Bot Dashboard</h1>
-                <p class="text-center text-muted" id="last-update"></p>
-            </div>
-        </div>
-
-        <div class="row">
-            <!-- Trading Status Card -->
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Trading Status</h5>
+                        <h5 class="card-title">Portfolio Overview</h5>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <strong>Bot Status:</strong>
-                            <span id="bot-status-indicator" class="status-indicator status-stopped"></span>
-                            <span id="bot-status-text">Stopped</span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>Position:</strong>
-                            <span id="position-status">None</span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>Entry Price:</strong>
-                            <span id="entry-price">N/A</span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>Current Price:</strong>
-                            <span id="current-price">N/A</span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>PnL:</strong>
-                            <span id="pnl">N/A</span>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <canvas id="portfolio-chart"></canvas>
+                            </div>
+                            <div class="col-md-6">
+                                <h3 class="mb-3">$<span id="total-balance">0.00</span></h3>
+                                <div class="mb-3">
+                                    <span class="text-muted">24h P&L:</span>
+                                    <span id="pnl-24h" class="ms-2">0.00%</span>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="text-muted">Active Trades:</span>
+                                    <span id="active-trades" class="ms-2">0</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Account Balance Card -->
-            <div class="col-md-4">
+            <!-- Bot Performance -->
+            <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Account Balance</h5>
+                        <h5 class="card-title">Bot Performance</h5>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <strong>USDT Balance:</strong>
-                            <span id="usdt-balance">N/A</span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>BTC Balance:</strong>
-                            <span id="btc-balance">N/A</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Controls Card -->
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Bot Controls</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <button id="start-bot" class="btn btn-success">
-                                <i class="bi bi-play-fill"></i> Start Bot
-                            </button>
-                            <button id="stop-bot" class="btn btn-danger" disabled>
-                                <i class="bi bi-stop-fill"></i> Stop Bot
-                            </button>
-                            <button id="close-position" class="btn btn-warning">
-                                <i class="bi bi-x-circle"></i> Close Position
-                            </button>
+                        <canvas id="performance-chart"></canvas>
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h6 class="text-muted">Win Rate</h6>
+                                    <h4 id="win-rate">0%</h4>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h6 class="text-muted">Sharpe Ratio</h6>
+                                    <h4 id="sharpe-ratio">0.00</h4>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h6 class="text-muted">Risk Score</h6>
+                                    <h4 id="risk-score">0.00</h4>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="row">
-            <!-- Market Data Card -->
-            <div class="col-12">
+        <!-- Recent Activity and Notifications -->
+        <div class="row mb-4">
+            <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Market Data</h5>
+                        <h5 class="card-title">Recent Activity</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-dark table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Timeframe</th>
-                                        <th>Open</th>
-                                        <th>High</th>
-                                        <th>Low</th>
-                                        <th>Close</th>
-                                        <th>Volume</th>
-                                        <th>Last Update</th>
+                                        <th>Time</th>
+                                        <th>Pair</th>
+                                        <th>Action</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
                                     </tr>
                                 </thead>
-                                <tbody id="market-data-table">
+                                <tbody id="recent-activity">
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Notifications</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="notifications">
+                            <!-- Notifications will be dynamically added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
+        <!-- Market Data and Charts -->
         <div class="row">
-            <!-- Charts Card -->
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Charts</h5>
+                        <h5 class="card-title">Market Analysis</h5>
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-8">
                                 <div class="chart-container">
-                                    <iframe id="price-chart" style="width: 100%; height: 100%; border: none;"></iframe>
+                                    <canvas id="market-chart"></canvas>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="chart-container">
-                                    <iframe id="quality-chart" style="width: 100%; height: 100%; border: none;"></iframe>
+                            <div class="col-md-4">
+                                <div class="table-responsive">
+                                    <table class="table table-dark">
+                                        <thead>
+                                            <tr>
+                                                <th>Metric</th>
+                                                <th>Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="market-metrics">
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -199,114 +375,211 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Update intervals
-        const STATUS_UPDATE_INTERVAL = 1000;  // 1 second
-        const MARKET_DATA_UPDATE_INTERVAL = 5000;  // 5 seconds
-        const CHART_UPDATE_INTERVAL = 30000;  // 30 seconds
+        // Initialize charts
+        function initializeCharts() {
+            // Portfolio Chart
+            const portfolioCtx = document.getElementById('portfolio-chart').getContext('2d');
+            new Chart(portfolioCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['BTC', 'ETH', 'USDT', 'Others'],
+                    datasets: [{
+                        data: [40, 30, 20, 10],
+                        backgroundColor: [
+                            '#ffd700',
+                            '#00f3ff',
+                            '#b388ff',
+                            '#b86c25'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#fff8e1'
+                            }
+                        }
+                    }
+                }
+            });
 
-        // Bot control functions
-        async function startBot() {
-            const response = await fetch('/api/start_bot', { method: 'POST' });
-            const data = await response.json();
-            if (data.status === 'success') {
-                document.getElementById('start-bot').disabled = true;
-                document.getElementById('stop-bot').disabled = false;
-                document.getElementById('bot-status-indicator').className = 'status-indicator status-running';
-                document.getElementById('bot-status-text').textContent = 'Running';
-            }
+            // Performance Chart
+            const performanceCtx = document.getElementById('performance-chart').getContext('2d');
+            new Chart(performanceCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'ROI',
+                        data: [0, 5, 8, 12, 15, 18],
+                        borderColor: '#ffd700',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff8e1'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                color: '#fff8e1'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#fff8e1'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Market Chart
+            const marketCtx = document.getElementById('market-chart').getContext('2d');
+            new Chart(marketCtx, {
+                type: 'candlestick',
+                data: {
+                    datasets: [{
+                        label: 'BTC/USDT',
+                        data: []
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff8e1'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                color: '#fff8e1'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#fff8e1'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
         }
 
-        async function stopBot() {
-            const response = await fetch('/api/stop_bot', { method: 'POST' });
-            const data = await response.json();
-            if (data.status === 'success') {
-                document.getElementById('start-bot').disabled = false;
-                document.getElementById('stop-bot').disabled = true;
-                document.getElementById('bot-status-indicator').className = 'status-indicator status-stopped';
-                document.getElementById('bot-status-text').textContent = 'Stopped';
-            }
-        }
-
-        async function closePosition() {
-            // Implement close position functionality
-        }
+        // Initialize charts when the page loads
+        document.addEventListener('DOMContentLoaded', initializeCharts);
 
         // Update functions
         async function updateStatus() {
             const response = await fetch('/api/bot_status');
             const data = await response.json();
             
-            document.getElementById('position-status').textContent = data.position || 'None';
-            document.getElementById('entry-price').textContent = data.entry_price ? `$${data.entry_price.toFixed(2)}` : 'N/A';
-            document.getElementById('current-price').textContent = `$${data.current_price.toFixed(2)}`;
-            
-            if (data.position && data.entry_price) {
-                const pnl = ((data.current_price - data.entry_price) / data.entry_price) * 100;
-                const pnlElement = document.getElementById('pnl');
-                pnlElement.textContent = `${pnl.toFixed(2)}%`;
-                pnlElement.className = pnl >= 0 ? 'price-up' : 'price-down';
+            // Update status badge
+            const statusBadge = document.getElementById('bot-status-badge');
+            if (data.status === 'running') {
+                statusBadge.className = 'status-badge status-live';
+                statusBadge.innerHTML = '<i class="bi bi-circle-fill"></i> LIVE';
             } else {
-                document.getElementById('pnl').textContent = 'N/A';
+                statusBadge.className = 'status-badge status-offline';
+                statusBadge.innerHTML = '<i class="bi bi-circle-fill"></i> OFFLINE';
             }
         }
 
-        async function updateMarketData() {
-            const response = await fetch('/api/market_data');
+        async function updatePortfolio() {
+            const response = await fetch('/api/portfolio');
             const data = await response.json();
             
-            const tableBody = document.getElementById('market-data-table');
-            tableBody.innerHTML = '';
+            document.getElementById('total-balance').textContent = data.total_balance.toFixed(2);
+            document.getElementById('pnl-24h').textContent = `${data.pnl_24h.toFixed(2)}%`;
+            document.getElementById('active-trades').textContent = data.active_trades;
+        }
+
+        async function updateRecentActivity() {
+            const response = await fetch('/api/recent_activity');
+            const data = await response.json();
             
-            for (const [interval, values] of Object.entries(data)) {
+            const tbody = document.getElementById('recent-activity');
+            tbody.innerHTML = '';
+            
+            data.activities.forEach(activity => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${interval}</td>
-                    <td>$${values.open.toFixed(2)}</td>
-                    <td>$${values.high.toFixed(2)}</td>
-                    <td>$${values.low.toFixed(2)}</td>
-                    <td>$${values.close.toFixed(2)}</td>
-                    <td>${values.volume.toFixed(2)}</td>
-                    <td>${new Date(values.timestamp).toLocaleString()}</td>
+                    <td>${new Date(activity.time).toLocaleString()}</td>
+                    <td>${activity.pair}</td>
+                    <td>${activity.action}</td>
+                    <td>$${activity.amount.toFixed(2)}</td>
+                    <td><span class="badge ${getStatusBadgeClass(activity.status)}">${activity.status}</span></td>
                 `;
-                tableBody.appendChild(row);
-            }
+                tbody.appendChild(row);
+            });
         }
 
-        async function updateCharts() {
-            const response = await fetch('/api/update_charts');
+        async function updateNotifications() {
+            const response = await fetch('/api/notifications');
             const data = await response.json();
             
-            if (data.status === 'success') {
-                document.getElementById('price-chart').src = data.chart_path;
-                document.getElementById('quality-chart').src = data.dashboard_path;
-            }
-        }
-
-        async function updateAccountBalance() {
-            const response = await fetch('/api/account_balance');
-            const data = await response.json();
+            const container = document.getElementById('notifications');
+            container.innerHTML = '';
             
-            if (data.status === 'success') {
-                document.getElementById('usdt-balance').textContent = `$${data.balance.toFixed(2)}`;
-            }
+            data.notifications.forEach(notification => {
+                const div = document.createElement('div');
+                div.className = `notification notification-${notification.type}`;
+                div.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">${notification.title}</h6>
+                            <p class="mb-1">${notification.message}</p>
+                        </div>
+                        <small>${new Date(notification.time).toLocaleTimeString()}</small>
+                    </div>
+                    ${notification.action ? `
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-primary">${notification.action}</button>
+                        </div>
+                    ` : ''}
+                `;
+                container.appendChild(div);
+            });
         }
-
-        // Event listeners
-        document.getElementById('start-bot').addEventListener('click', startBot);
-        document.getElementById('stop-bot').addEventListener('click', stopBot);
-        document.getElementById('close-position').addEventListener('click', closePosition);
 
         // Start update intervals
-        setInterval(updateStatus, STATUS_UPDATE_INTERVAL);
-        setInterval(updateMarketData, MARKET_DATA_UPDATE_INTERVAL);
-        setInterval(updateCharts, CHART_UPDATE_INTERVAL);
-        setInterval(updateAccountBalance, STATUS_UPDATE_INTERVAL);
+        setInterval(updateStatus, 1000);
+        setInterval(updatePortfolio, 5000);
+        setInterval(updateRecentActivity, 5000);
+        setInterval(updateNotifications, 5000);
 
         // Initial updates
         updateStatus();
-        updateMarketData();
-        updateCharts();
-        updateAccountBalance();
+        updatePortfolio();
+        updateRecentActivity();
+        updateNotifications();
     </script>
 </body>
 </html> 

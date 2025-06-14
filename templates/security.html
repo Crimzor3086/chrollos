@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Settings - Chrollo AI Tradebot</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-dark: #18130a;
+            --secondary-dark: #222016;
+            --accent-gold: #ffd700;
+            --accent-gold-hover: #bfa14a;
+            --accent-red: #b86c25;
+            --text-light: #fff8e1;
+            --neon-blue: #00f3ff;
+            --neon-purple: #b388ff;
+        }
+
+        body {
+            background-color: var(--primary-dark);
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .top-bar {
+            background-color: var(--secondary-dark);
+            border-bottom: 1px solid var(--accent-gold);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--neon-blue);
+        }
+
+        .card {
+            background-color: var(--secondary-dark);
+            border: 1px solid var(--accent-gold);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background-color: rgba(191, 161, 74, 0.1);
+            border-bottom: 1px solid var(--accent-gold);
+            padding: 1rem;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .card-title {
+            color: var(--accent-gold);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-gold);
+            border-color: var(--accent-gold);
+            color: var(--primary-dark);
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-gold-hover);
+            border-color: var(--accent-gold-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline-primary {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--accent-gold);
+            color: var(--primary-dark);
+        }
+
+        .form-control {
+            background-color: var(--primary-dark);
+            border: 1px solid var(--accent-gold);
+            color: var(--text-light);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+        }
+
+        .form-control:focus {
+            background-color: var(--primary-dark);
+            border-color: var(--accent-gold);
+            color: var(--text-light);
+            box-shadow: 0 0 0 0.25rem rgba(255, 215, 0, 0.25);
+        }
+
+        .form-label {
+            color: var(--text-light);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .security-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .security-status.active {
+            background-color: rgba(0, 243, 255, 0.1);
+            border: 1px solid var(--neon-blue);
+        }
+
+        .security-status.inactive {
+            background-color: rgba(184, 108, 37, 0.1);
+            border: 1px solid var(--accent-red);
+        }
+
+        .security-status i {
+            font-size: 1.2rem;
+        }
+
+        .api-key {
+            background-color: rgba(191, 161, 74, 0.1);
+            border: 1px solid var(--accent-gold);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .api-key-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .api-key-name {
+            color: var(--accent-gold);
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .api-key-value {
+            font-family: monospace;
+            color: var(--text-light);
+            background-color: var(--primary-dark);
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+
+        .api-key-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .activity-log {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-time {
+            color: var(--accent-gold);
+            font-size: 0.9rem;
+        }
+
+        .activity-description {
+            color: var(--text-light);
+            margin: 0.25rem 0;
+        }
+
+        .activity-ip {
+            color: var(--text-light);
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--primary-dark);
+            border: 1px solid var(--accent-gold);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 3px;
+            background-color: var(--accent-gold);
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: rgba(255, 215, 0, 0.1);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <a href="/" class="logo">
+                        <i class="bi bi-cpu"></i> Chrollo AI
+                    </a>
+                </div>
+                <div class="col-md-4 text-center">
+                    <h4 class="mb-0">Security Settings</h4>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="/" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid py-4">
+        <!-- Security Overview -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Security Overview</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="security-status active">
+                                    <i class="bi bi-shield-check text-success"></i>
+                                    <div>
+                                        <h6 class="mb-0">Two-Factor Authentication</h6>
+                                        <small>Enabled</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="security-status active">
+                                    <i class="bi bi-shield-check text-success"></i>
+                                    <div>
+                                        <h6 class="mb-0">IP Whitelist</h6>
+                                        <small>3 IPs allowed</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="security-status active">
+                                    <i class="bi bi-shield-check text-success"></i>
+                                    <div>
+                                        <h6 class="mb-0">Session Management</h6>
+                                        <small>2 active sessions</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Authentication Settings -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Authentication Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="auth-settings-form">
+                            <div class="mb-3">
+                                <label class="form-label">Current Password</label>
+                                <input type="password" class="form-control" id="current-password">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="new-password">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirm-password">
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-0">Two-Factor Authentication</label>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update Password</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">API Keys</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="api-key">
+                            <div class="api-key-header">
+                                <h6 class="api-key-name">Trading API Key</h6>
+                                <div class="api-key-actions">
+                                    <button class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="api-key-value">••••••••••••••••••••••••••••••••</div>
+                            <small class="text-muted">Created: 2024-03-15 | Last used: 2024-03-20</small>
+                        </div>
+                        <div class="api-key">
+                            <div class="api-key-header">
+                                <h6 class="api-key-name">Read-Only API Key</h6>
+                                <div class="api-key-actions">
+                                    <button class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="api-key-value">••••••••••••••••••••••••••••••••</div>
+                            <small class="text-muted">Created: 2024-03-15 | Last used: 2024-03-20</small>
+                        </div>
+                        <button class="btn btn-outline-primary">
+                            <i class="bi bi-plus"></i> Generate New API Key
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Features -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Security Features</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">IP Whitelist</h6>
+                                    <small class="text-muted">Restrict access to specific IP addresses</small>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Session Timeout</h6>
+                                    <small class="text-muted">Automatically log out after 30 minutes of inactivity</small>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Email Notifications</h6>
+                                    <small class="text-muted">Receive alerts for suspicious activities</small>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Trading Limits</h6>
+                                    <small class="text-muted">Set maximum trading amounts per day</small>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="activity-log">
+                            <div class="activity-item">
+                                <div class="activity-time">2024-03-20 15:30:45</div>
+                                <div class="activity-description">Login from new IP address</div>
+                                <div class="activity-ip">IP: 192.168.1.1</div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-time">2024-03-20 14:15:22</div>
+                                <div class="activity-description">API key generated</div>
+                                <div class="activity-ip">IP: 192.168.1.1</div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-time">2024-03-20 13:45:10</div>
+                                <div class="activity-description">Password changed</div>
+                                <div class="activity-ip">IP: 192.168.1.1</div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-time">2024-03-20 12:30:05</div>
+                                <div class="activity-description">2FA enabled</div>
+                                <div class="activity-ip">IP: 192.168.1.1</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Handle form submission
+        document.getElementById('auth-settings-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (newPassword !== confirmPassword) {
+                alert('New passwords do not match!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/security/update-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        currentPassword,
+                        newPassword
+                    })
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    alert('Password updated successfully!');
+                    this.reset();
+                } else {
+                    alert('Error updating password: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error updating password:', error);
+                alert('Error updating password. Please try again.');
+            }
+        });
+
+        // Handle API key visibility toggle
+        document.querySelectorAll('.api-key-actions .bi-eye').forEach(button => {
+            button.addEventListener('click', function() {
+                const apiKeyValue = this.closest('.api-key').querySelector('.api-key-value');
+                if (apiKeyValue.textContent === '••••••••••••••••••••••••••••••••') {
+                    apiKeyValue.textContent = 'sk_live_51NxYt2KJ8H9vX2mP3qR4sT5uV6wX7yZ8';
+                } else {
+                    apiKeyValue.textContent = '••••••••••••••••••••••••••••••••';
+                }
+            });
+        });
+
+        // Handle API key regeneration
+        document.querySelectorAll('.api-key-actions .bi-arrow-clockwise').forEach(button => {
+            button.addEventListener('click', async function() {
+                if (confirm('Are you sure you want to regenerate this API key? The old key will be invalidated.')) {
+                    try {
+                        const response = await fetch('/api/security/regenerate-key', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                keyId: this.closest('.api-key').dataset.keyId
+                            })
+                        });
+
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            alert('API key regenerated successfully!');
+                            // Update the key value in the UI
+                            this.closest('.api-key').querySelector('.api-key-value').textContent = '••••••••••••••••••••••••••••••••';
+                        } else {
+                            alert('Error regenerating API key: ' + data.message);
+                        }
+                    } catch (error) {
+                        console.error('Error regenerating API key:', error);
+                        alert('Error regenerating API key. Please try again.');
+                    }
+                }
+            });
+        });
+
+        // Handle API key deletion
+        document.querySelectorAll('.api-key-actions .bi-trash').forEach(button => {
+            button.addEventListener('click', async function() {
+                if (confirm('Are you sure you want to delete this API key? This action cannot be undone.')) {
+                    try {
+                        const response = await fetch('/api/security/delete-key', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                keyId: this.closest('.api-key').dataset.keyId
+                            })
+                        });
+
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            alert('API key deleted successfully!');
+                            // Remove the key from the UI
+                            this.closest('.api-key').remove();
+                        } else {
+                            alert('Error deleting API key: ' + data.message);
+                        }
+                    } catch (error) {
+                        console.error('Error deleting API key:', error);
+                        alert('Error deleting API key. Please try again.');
+                    }
+                }
+            });
+        });
+
+        // Handle security feature toggles
+        document.querySelectorAll('.toggle-switch input').forEach(toggle => {
+            toggle.addEventListener('change', async function() {
+                const feature = this.closest('.mb-3').querySelector('h6').textContent;
+                try {
+                    const response = await fetch('/api/security/update-feature', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            feature,
+                            enabled: this.checked
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.status !== 'success') {
+                        alert('Error updating feature: ' + data.message);
+                        this.checked = !this.checked; // Revert the toggle
+                    }
+                } catch (error) {
+                    console.error('Error updating feature:', error);
+                    alert('Error updating feature. Please try again.');
+                    this.checked = !this.checked; // Revert the toggle
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
