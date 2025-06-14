@@ -36,8 +36,7 @@ connected_wallets = set()
 @app.route('/favicon.ico')
 def favicon():
     """Serve the favicon"""
-    return send_from_directory(os.path.join(app.root_path, 'static'),
-                             'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.route('/charts/<path:filename>')
 def serve_chart(filename):
@@ -318,4 +317,10 @@ def get_notifications():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=5000) 
+    # Check if running on Vercel
+    if os.environ.get('VERCEL'):
+        # Production settings for Vercel
+        app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    else:
+        # Development settings
+        app.run(debug=False, host='0.0.0.0', port=5000) 
