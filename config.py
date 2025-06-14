@@ -8,44 +8,54 @@ This includes API credentials, trading parameters, and risk management settings.
 API_KEY = 'yPLvUkt6JP1x0WXqYhNrp5oXfleok4KZed5elSWh46qdz4NuAWdG53C581zzBApm'
 API_SECRET = 'AZ63gxtmOBM8jPaQa3lYqtv6rIfhpnvROHBfzsaxy6GzB2rbVZzKTaH1kgKEmm2j'
 
-# Ethereum network configuration
-ETH_NETWORKS = {
+# Solana network configuration
+SOLANA_NETWORKS = {
     'mainnet': {
-        'name': 'Ethereum Mainnet',
-        'rpc_url': 'https://mainnet.infura.io/v3/YOUR_INFURA_KEY',
-        'chain_id': 1,
-        'explorer': 'https://etherscan.io'
+        'name': 'Solana Mainnet',
+        'rpc_url': 'https://api.mainnet-beta.solana.com',
+        'chain_id': 'mainnet-beta',
+        'explorer': 'https://explorer.solana.com'
     },
     'testnet': {
-        'name': 'Sepolia Testnet',
-        'rpc_url': 'https://sepolia.infura.io/v3/YOUR_INFURA_KEY',
-        'chain_id': 11155111,
-        'explorer': 'https://sepolia.etherscan.io'
+        'name': 'Solana Testnet',
+        'rpc_url': 'https://api.testnet.solana.com',
+        'chain_id': 'testnet',
+        'explorer': 'https://explorer.solana.com/?cluster=testnet'
+    },
+    'devnet': {
+        'name': 'Solana Devnet',
+        'rpc_url': 'https://api.devnet.solana.com',
+        'chain_id': 'devnet',
+        'explorer': 'https://explorer.solana.com/?cluster=devnet'
     }
 }
 
 # Default network
-DEFAULT_NETWORK = 'testnet'
+DEFAULT_NETWORK = 'devnet'
 
-# Smart contract addresses
-CONTRACT_ADDRESSES = {
+# Program IDs (Smart Contract addresses)
+PROGRAM_IDS = {
     'mainnet': {
-        'router': '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',  # Uniswap V2 Router
-        'factory': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'  # Uniswap V2 Factory
+        'token_program': 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'system_program': '11111111111111111111111111111111',
+        'rent': 'SysvarRent111111111111111111111111111111111'
     },
     'testnet': {
-        'router': '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',  # Testnet Router
-        'factory': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'  # Testnet Factory
+        'token_program': 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'system_program': '11111111111111111111111111111111',
+        'rent': 'SysvarRent111111111111111111111111111111111'
+    },
+    'devnet': {
+        'token_program': 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'system_program': '11111111111111111111111111111111',
+        'rent': 'SysvarRent111111111111111111111111111111111'
     }
 }
 
-# Gas settings
-GAS_LIMIT = 300000
-GAS_PRICE_MULTIPLIER = 1.1  # 10% above market price
-
 # Transaction settings
-MAX_SLIPPAGE = 0.5  # 0.5% maximum slippage
-MIN_LIQUIDITY = 1000  # Minimum liquidity in USD
+MAX_RETRIES = 3
+COMMITMENT = 'confirmed'
+PRIORITY_FEE = 0.000005  # SOL
 
 # Trading parameters
 SYMBOL = 'BTCUSDT'  # The trading pair to monitor and trade

@@ -14,164 +14,163 @@ import json
 import logging
 from datetime import datetime
 import os
-from config import ETH_NETWORKS, DEFAULT_NETWORK, CONTRACT_ADDRESSES, GAS_LIMIT, GAS_PRICE_MULTIPLIER
+from config import SOLANA_NETWORKS, DEFAULT_NETWORK, PROGRAM_IDS
+from solana.rpc.api import Client
+from solana.rpc.commitment import Commitment
+from solana.transaction import Transaction
+from solana.keypair import Keypair
+from solana.publickey import PublicKey
+import base58
 
 class WalletManager:
     def __init__(self):
         """Initialize the wallet manager with default network settings"""
         self.network = DEFAULT_NETWORK
-        self.web3 = Web3(Web3.HTTPProvider(ETH_NETWORKS[DEFAULT_NETWORK]['rpc_url']))
+        self.web3 = Web3(Web3.HTTPProvider(SOLANA_NETWORKS[DEFAULT_NETWORK]['rpc_url']))
         self.connected_wallets = {}
         self.transaction_history = {}
         self.logger = logging.getLogger('WalletManager')
+        self.current_network = DEFAULT_NETWORK
+        self.client = Client(SOLANA_NETWORKS[DEFAULT_NETWORK]['rpc_url'])
         
         # Create transaction history directory if it doesn't exist
         self.history_dir = 'transaction_history'
         if not os.path.exists(self.history_dir):
             os.makedirs(self.history_dir)
             
-    def connect_wallet(self, address):
-        """
-        Connect a wallet and store its information
-        
-        Args:
-            address (str): Ethereum wallet address
-            
-        Returns:
-            dict: Wallet information including balance and network
-        """
+    def connect_wallet(self, address, public_key=None):
+        """Connect a Solana wallet"""
         try:
-            # Convert address to checksum format
-            address = self.web3.to_checksum_address(address)
-            
-            if not self.web3.is_address(address):
-                raise ValueError("Invalid Ethereum address")
-                
-            # Get wallet balance
-            balance = self.web3.eth.get_balance(address)
-            balance_eth = self.web3.from_wei(balance, 'ether')
-            
-            # Store wallet information
-            self.connected_wallets[address] = {
+            # Initialize wallet info
+            wallet_info = {
                 'address': address,
-                'balance': balance_eth,
-                'network': self.network,
-                'connected_at': datetime.now().isoformat()
+                'public_key': public_key,
+                'network': self.current_network,
+                'balance': 0,
+                'connected': True
             }
             
-            # Load transaction history
-            self._load_transaction_history(address)
+            # Get initial balance
+            balance = self.client.get_balance(address)
+            wallet_info['balance'] = balance['result']['value'] / 1e9  # Convert lamports to SOL
             
-            return self.connected_wallets[address]
+            # Store wallet info
+            self.connected_wallets[address] = wallet_info
+            return wallet_info
             
         except Exception as e:
-            self.logger.error(f"Error connecting wallet {address}: {e}")
+            logging.error(f"Error connecting wallet: {e}")
             raise
             
     def disconnect_wallet(self, address):
-        """
-        Disconnect a wallet and save its transaction history
-        
-        Args:
-            address (str): Ethereum wallet address
-        """
+        """Disconnect a Solana wallet"""
         if address in self.connected_wallets:
-            self._save_transaction_history(address)
             del self.connected_wallets[address]
             
     def switch_network(self, network):
-        """
-        Switch to a different Ethereum network
-        
-        Args:
-            network (str): Network name ('mainnet' or 'testnet')
-        """
-        if network not in ETH_NETWORKS:
+        """Switch Solana network"""
+        if network not in SOLANA_NETWORKS:
             raise ValueError(f"Invalid network: {network}")
             
         self.network = network
-        self.web3 = Web3(Web3.HTTPProvider(ETH_NETWORKS[network]['rpc_url']))
+        self.web3 = Web3(Web3.HTTPProvider(SOLANA_NETWORKS[network]['rpc_url']))
+        self.current_network = network
+        self.client = Client(SOLANA_NETWORKS[network]['rpc_url'])
         
-        # Update network for all connected wallets
+        # Update all connected wallets
         for address in self.connected_wallets:
-            self.connected_wallets[address]['network'] = network
-            
-    def get_transaction_history(self, address):
-        """
-        Get transaction history for a wallet
-        
-        Args:
-            address (str): Ethereum wallet address
-            
-        Returns:
-            list: List of transactions
-        """
-        if address not in self.transaction_history:
-            self._load_transaction_history(address)
-        return self.transaction_history.get(address, [])
-        
-    def add_transaction(self, address, tx_hash, tx_type, amount, token=None):
-        """
-        Add a transaction to the history
-        
-        Args:
-            address (str): Wallet address
-            tx_hash (str): Transaction hash
-            tx_type (str): Transaction type (e.g., 'swap', 'transfer')
-            amount (float): Transaction amount
-            token (str, optional): Token symbol if applicable
-        """
-        if address not in self.transaction_history:
-            self.transaction_history[address] = []
-            
-        transaction = {
-            'hash': tx_hash,
-            'type': tx_type,
-            'amount': amount,
-            'token': token,
-            'network': self.network,
-            'timestamp': datetime.now().isoformat(),
-            'status': 'pending'
-        }
-        
-        self.transaction_history[address].append(transaction)
-        self._save_transaction_history(address)
-        
-    def update_transaction_status(self, address, tx_hash, status):
-        """
-        Update the status of a transaction
-        
-        Args:
-            address (str): Wallet address
-            tx_hash (str): Transaction hash
-            status (str): New status ('pending', 'confirmed', 'failed')
-        """
-        if address in self.transaction_history:
-            for tx in self.transaction_history[address]:
-                if tx['hash'] == tx_hash:
-                    tx['status'] = status
-                    self._save_transaction_history(address)
-                    break
-                    
-    def _load_transaction_history(self, address):
-        """Load transaction history from file"""
-        history_file = os.path.join(self.history_dir, f"{address}.json")
-        if os.path.exists(history_file):
             try:
-                with open(history_file, 'r') as f:
-                    self.transaction_history[address] = json.load(f)
+                balance = self.client.get_balance(address)
+                self.connected_wallets[address]['balance'] = balance['result']['value'] / 1e9
+                self.connected_wallets[address]['network'] = network
             except Exception as e:
-                self.logger.error(f"Error loading transaction history for {address}: {e}")
-                
-    def _save_transaction_history(self, address):
-        """Save transaction history to file"""
-        history_file = os.path.join(self.history_dir, f"{address}.json")
-        try:
-            with open(history_file, 'w') as f:
-                json.dump(self.transaction_history[address], f, indent=2)
-        except Exception as e:
-            self.logger.error(f"Error saving transaction history for {address}: {e}")
+                logging.error(f"Error updating wallet balance for {address}: {e}")
             
+    def get_balance(self, address):
+        """Get wallet balance"""
+        try:
+            balance = self.client.get_balance(address)
+            return balance['result']['value'] / 1e9
+        except Exception as e:
+            logging.error(f"Error getting balance for {address}: {e}")
+            return 0
+            
+    def get_transaction_history(self, address, limit=10):
+        """Get transaction history for a wallet"""
+        try:
+            # Get recent signatures
+            signatures = self.client.get_signatures_for_address(
+                PublicKey(address),
+                limit=limit
+            )
+            
+            transactions = []
+            for sig_info in signatures['result']:
+                # Get transaction details
+                tx = self.client.get_transaction(
+                    sig_info['signature'],
+                    commitment=Commitment("confirmed")
+                )
+                
+                if tx['result']:
+                    transactions.append({
+                        'signature': sig_info['signature'],
+                        'timestamp': sig_info['blockTime'],
+                        'status': 'confirmed',
+                        'fee': tx['result']['meta']['fee'] / 1e9,
+                        'type': self._determine_transaction_type(tx['result'])
+                    })
+                    
+            return transactions
+            
+        except Exception as e:
+            logging.error(f"Error getting transaction history for {address}: {e}")
+            return []
+            
+    def _determine_transaction_type(self, tx):
+        """Determine the type of transaction"""
+        # This is a simplified version - you might want to add more transaction types
+        if 'instructions' in tx['transaction']['message']:
+            instructions = tx['transaction']['message']['instructions']
+            if any(ix['programId'] == 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' for ix in instructions):
+                return 'token_transfer'
+            elif any(ix['programId'] == '11111111111111111111111111111111' for ix in instructions):
+                return 'sol_transfer'
+        return 'unknown'
+        
+    def send_transaction(self, from_address, to_address, amount, private_key=None):
+        """Send a transaction"""
+        try:
+            # Create transaction
+            transaction = Transaction()
+            
+            # Add transfer instruction
+            transaction.add_transfer(
+                from_pubkey=PublicKey(from_address),
+                to_pubkey=PublicKey(to_address),
+                lamports=int(amount * 1e9)  # Convert SOL to lamports
+            )
+            
+            # Sign transaction if private key is provided
+            if private_key:
+                keypair = Keypair.from_secret_key(base58.b58decode(private_key))
+                transaction.sign(keypair)
+                
+            # Send transaction
+            result = self.client.send_transaction(
+                transaction,
+                opts={"skip_confirmation": False}
+            )
+            
+            return {
+                'status': 'success',
+                'signature': result['result']
+            }
+            
+        except Exception as e:
+            logging.error(f"Error sending transaction: {e}")
+            raise
+        
     def estimate_gas_price(self):
         """
         Estimate current gas price with multiplier

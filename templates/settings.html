@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Chrolo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">
+                                <i class="bi bi-house-door"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/trading">
+                                <i class="bi bi-graph-up"></i> Trading
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/analytics">
+                                <i class="bi bi-bar-chart"></i> Analytics
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/settings">
+                                <i class="bi bi-gear"></i> Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Settings</h1>
+                </div>
+
+                <!-- Settings sections -->
+                <div class="row">
+                    <!-- API Configuration -->
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">API Configuration</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="api-settings-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">API Key</label>
+                                        <input type="password" class="form-control" id="api-key" name="api_key">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">API Secret</label>
+                                        <input type="password" class="form-control" id="api-secret" name="api_secret">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save API Settings</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trading Settings -->
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Trading Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="trading-settings-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Default Trading Pair</label>
+                                        <select class="form-select" id="trading-pair" name="trading_pair">
+                                            <option value="BTCUSDT">BTC/USDT</option>
+                                            <option value="ETHUSDT">ETH/USDT</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Position Size (% of Portfolio)</label>
+                                        <input type="number" class="form-control" id="position-size" name="position_size" min="1" max="100" value="10">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Stop Loss (%)</label>
+                                        <input type="number" class="form-control" id="stop-loss" name="stop_loss" min="0.1" max="100" step="0.1" value="2">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Take Profit (%)</label>
+                                        <input type="number" class="form-control" id="take-profit" name="take_profit" min="0.1" max="100" step="0.1" value="4">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Trading Settings</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification Settings -->
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Notification Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="notification-settings-form">
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="email-notifications" name="email_notifications">
+                                            <label class="form-check-label" for="email-notifications">Email Notifications</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="trade-notifications" name="trade_notifications">
+                                            <label class="form-check-label" for="trade-notifications">Trade Notifications</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="error-notifications" name="error_notifications">
+                                            <label class="form-check-label" for="error-notifications">Error Notifications</label>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Notification Settings</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk Management -->
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Risk Management</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="risk-settings-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Maximum Daily Loss (%)</label>
+                                        <input type="number" class="form-control" id="max-daily-loss" name="max_daily_loss" min="0.1" max="100" step="0.1" value="5">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Maximum Open Positions</label>
+                                        <input type="number" class="form-control" id="max-positions" name="max_positions" min="1" max="10" value="3">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Leverage</label>
+                                        <select class="form-select" id="leverage" name="leverage">
+                                            <option value="1">1x</option>
+                                            <option value="2">2x</option>
+                                            <option value="3">3x</option>
+                                            <option value="5">5x</option>
+                                            <option value="10">10x</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Risk Settings</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+</body>
+</html> 
