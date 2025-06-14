@@ -1,10 +1,9 @@
 """
-This module handles Ethereum wallet interactions and transaction management.
+This module handles Solana wallet interactions and transaction management.
 It includes functionality for:
 - Wallet connection and management
 - Transaction creation and signing
 - Transaction history tracking
-- Gas price estimation
 - Network switching
 """
 
