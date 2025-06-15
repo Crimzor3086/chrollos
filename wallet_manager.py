@@ -16,9 +16,9 @@ import os
 from config import SOLANA_NETWORKS, DEFAULT_NETWORK, PROGRAM_IDS
 from solana.rpc.api import Client
 from solana.rpc.commitment import Commitment
-from solana.transaction import Transaction
-from solana.keypair import Keypair
-from solana.publickey import PublicKey
+from solders.transaction import Transaction
+from solders.keypair import Keypair
+from solders.pubkey import Pubkey
 import base58
 
 class WalletManager:
@@ -81,7 +81,7 @@ class WalletManager:
             try:
                 balance = self.client.get_balance(address)
                 self.connected_wallets[address]['balance'] = balance['result']['value'] / 1e9
-                self.connected_wallets[address]['network'] = network
+            self.connected_wallets[address]['network'] = network
             except Exception as e:
                 logging.error(f"Error updating wallet balance for {address}: {e}")
             
@@ -99,7 +99,7 @@ class WalletManager:
         try:
             # Get recent signatures
             signatures = self.client.get_signatures_for_address(
-                PublicKey(address),
+                Pubkey(address),
                 limit=limit
             )
             
@@ -145,8 +145,8 @@ class WalletManager:
             
             # Add transfer instruction
             transaction.add_transfer(
-                from_pubkey=PublicKey(from_address),
-                to_pubkey=PublicKey(to_address),
+                from_pubkey=Pubkey(from_address),
+                to_pubkey=Pubkey(to_address),
                 lamports=int(amount * 1e9)  # Convert SOL to lamports
             )
             
@@ -169,7 +169,7 @@ class WalletManager:
         except Exception as e:
             logging.error(f"Error sending transaction: {e}")
             raise
-        
+            
     def estimate_gas_price(self):
         """
         Estimate current gas price with multiplier

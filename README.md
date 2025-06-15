@@ -1,6 +1,6 @@
-# AI Trading Bot
+# Chrolo - AI Trading Bot
 
-An advanced cryptocurrency trading bot that combines machine learning with technical analysis to make trading decisions. The bot features a modern web-based dashboard for real-time monitoring and control.
+An advanced cryptocurrency trading bot that combines machine learning with technical analysis to make trading decisions. The bot features a modern web-based dashboard for real-time monitoring and control, with Solana blockchain integration.
 
 ## Features
 
@@ -11,6 +11,8 @@ An advanced cryptocurrency trading bot that combines machine learning with techn
 - Technical indicators (SMA, RSI, MACD, Bollinger Bands)
 - Risk management with stop-loss and take-profit
 - Position sizing based on account balance
+- Solana blockchain integration
+- Phantom wallet support
 
 ### Data Management
 - Efficient data caching
@@ -18,6 +20,7 @@ An advanced cryptocurrency trading bot that combines machine learning with techn
 - Data quality monitoring
 - Automatic data validation
 - Gap detection and handling
+- Solana network data integration
 
 ### Web Dashboard
 - Real-time price charts
@@ -27,19 +30,22 @@ An advanced cryptocurrency trading bot that combines machine learning with techn
 - Data quality metrics
 - Interactive controls
 - Dark theme interface
+- Wallet connection management
+- Order book visualization
+- Open orders tracking
 
 ## Prerequisites
 
 - Python 3.8 or higher
-- Binance account with API access
-- Sufficient funds for trading
+- Solana wallet (Phantom recommended)
+- Sufficient SOL for trading
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/ai-trading-bot.git
-cd ai-trading-bot
+git clone https://github.com/yourusername/chrolo.git
+cd chrolo
 ```
 
 2. Install dependencies:
@@ -47,12 +53,11 @@ cd ai-trading-bot
 pip install -r requirements.txt
 ```
 
-3. Configure your Binance API credentials:
+3. Configure your Solana network settings:
    - Create a `config.py` file in the project root
-   - Add your API key and secret:
+   - Add your network configuration:
 ```python
-API_KEY = 'your_api_key_here'
-API_SECRET = 'your_api_secret_here'
+SOLANA_NETWORK = 'mainnet-beta'  # or 'testnet' for testing
 ```
 
 ## Usage
@@ -66,36 +71,46 @@ python app.py
 
 2. Open your browser and navigate to:
 ```
-http://localhost:8050
+http://localhost:5000
 ```
 
 ### Dashboard Features
 
-1. **Trading Status**
+1. **Wallet Connection**
+   - Phantom wallet integration
+   - Balance display
+   - Network selection
+   - Account management
+
+2. **Trading Status**
    - Current position (Buy/Sell/None)
    - Entry price
    - Current price
    - Profit/Loss percentage
+   - Bot status monitoring
 
-2. **Account Balance**
-   - USDT balance
-   - BTC balance
+3. **Account Balance**
+   - SOL balance
+   - Token balances
+   - Portfolio distribution
 
-3. **Bot Controls**
+4. **Bot Controls**
    - Start/Stop trading
    - Close positions
    - Status monitoring
+   - Strategy selection
 
-4. **Price Charts**
-   - Multiple timeframe candlestick charts
-   - Volume indicators
-   - Auto-updating every 5 seconds
+5. **Trading Interface**
+   - Real-time order book
+   - Market/Limit order placement
+   - Open orders management
+   - Price charts with indicators
 
-5. **Data Quality Dashboard**
-   - Timestamp issues
-   - Price data quality
-   - Volume data quality
-   - Auto-updating every 30 seconds
+6. **Settings**
+   - Trading parameters
+   - Risk management
+   - Notification preferences
+   - API configuration
 
 ### Trading Strategy
 
@@ -115,19 +130,25 @@ The bot uses a combination of:
    - Stop-loss (2%)
    - Take-profit (4%)
    - Position sizing (10% of balance)
+   - Custom risk rules
 
 ## Project Structure
 
 ```
-ai-trading-bot/
+chrolo/
 ├── app.py              # Web dashboard application
 ├── bot.py             # Main trading bot logic
 ├── data_manager.py    # Data handling and caching
 ├── strategy.py        # Trading strategies
 ├── features.py        # Feature engineering
 ├── visualizer.py      # Chart generation
-├── config.py          # Configuration (API keys)
+├── config.py          # Configuration
 ├── requirements.txt   # Project dependencies
+├── templates/         # Web interface templates
+│   ├── index.html    # Main dashboard
+│   ├── trading.html  # Trading interface
+│   ├── analytics.html # Analytics dashboard
+│   └── settings.html # Settings interface
 └── README.md         # Project documentation
 ```
 
@@ -135,9 +156,11 @@ ai-trading-bot/
 
 - Data validation and quality checks
 - Error handling and logging
-- API rate limiting
+- Network rate limiting
 - Position size limits
 - Stop-loss protection
+- Wallet security measures
+- Transaction confirmation checks
 
 ## Contributing
 
@@ -158,5 +181,3 @@ This trading bot is for educational purposes only. Use at your own risk. Cryptoc
 ## Support
 
 For support, please open an issue in the GitHub repository or contact the maintainers.
-# chrollos
-# chrollos

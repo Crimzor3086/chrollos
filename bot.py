@@ -1,13 +1,17 @@
 """
 This module implements a trading bot that combines technical analysis and machine learning
-strategies for automated cryptocurrency trading on Binance. It includes features for
+strategies for automated cryptocurrency trading on Solana. It includes features for
 position management, risk control, and real-time market visualization.
 """
 
-from binance.client import Client
-from binance.exceptions import BinanceAPIException
-from config import API_KEY, API_SECRET
-from strategy import sma_strategy
+from solana.rpc.api import Client as SolanaClient
+from solana.rpc.commitment import Confirmed
+from solders.keypair import Keypair
+from solders.pubkey import Pubkey
+from solders.transaction import Transaction
+from solders.system_program import ID as SYS_PROGRAM_ID
+from solana.rpc.types import TxOpts
+from config import SOLANA_NETWORKS, DEFAULT_NETWORK, PROGRAM_IDS, MAX_RETRIES, COMMITMENT, PRIORITY_FEE
 import pandas as pd
 import numpy as np
 import time
@@ -40,7 +44,7 @@ class TradingBot:
     - Market visualization
     """
     
-    def __init__(self, symbol='BTCUSDT', intervals=['1m', '5m', '15m', '1h'], lookback=100):
+    def __init__(self, symbol='SOL/USDC', intervals=['1m', '5m', '15m', '1h'], lookback=100):
         """
         Initialize the trading bot with configuration parameters.
         
@@ -49,7 +53,8 @@ class TradingBot:
             intervals (list): List of time intervals to analyze
             lookback (int): Number of historical candles to consider
         """
-        self.client = Client(API_KEY, API_SECRET)
+        # Initialize Solana client
+        self.client = SolanaClient(SOLANA_NETWORKS[DEFAULT_NETWORK]['rpc_url'])
         self.symbol = symbol
         self.intervals = intervals
         self.lookback = lookback
@@ -75,18 +80,20 @@ class TradingBot:
 
     def get_account_balance(self):
         """
-        Get the current USDT balance from the Binance account.
+        Get the current SOL balance from the Solana account.
         
         Returns:
-            float: Available USDT balance
+            float: Available SOL balance
         """
         try:
-            account = self.client.get_account()
-            for asset in account['balances']:
-                if asset['asset'] == 'USDT':
-                    return float(asset['free'])
+            # Get account info for the wallet
+            account_info = self.client.get_account_info(self.wallet.public_key)
+            if account_info and account_info.value:
+                # Convert lamports to SOL (1 SOL = 1e9 lamports)
+                balance = account_info.value.lamports / 1e9
+                return balance
             return 0
-        except BinanceAPIException as e:
+        except Exception as e:
             logging.error(f"Error getting account balance: {e}")
             return 0
 
@@ -95,34 +102,58 @@ class TradingBot:
         Calculate the position size based on current balance and risk parameters.
         
         Returns:
-            float: Position size in base currency
+            float: Position size in SOL
         """
         balance = self.get_account_balance()
-        current_price = float(self.client.get_symbol_ticker(symbol=self.symbol)['price'])
+        current_price = self.get_current_price()
         position_size = (balance * self.max_position_size) / current_price
         return position_size
 
+    def get_current_price(self):
+        """
+        Get the current price of SOL in USDC.
+        
+        Returns:
+            float: Current price of SOL in USDC
+        """
+        try:
+            # This is a placeholder - you'll need to implement actual price fetching
+            # from a DEX or price oracle
+            return 100.0  # Example price
+        except Exception as e:
+            logging.error(f"Error getting current price: {e}")
+            return 0
+
     def place_order(self, side, quantity):
         """
-        Place a market order on Binance.
+        Place a market order on Solana DEX.
         
         Args:
             side (str): 'BUY' or 'SELL'
             quantity (float): Order quantity
             
         Returns:
-            dict: Order response from Binance, or None if failed
+            dict: Transaction response from Solana, or None if failed
         """
         try:
-            order = self.client.create_order(
-                symbol=self.symbol,
-                side=side,
-                type='MARKET',
-                quantity=quantity
+            # Create a new transaction
+            transaction = Transaction()
+            
+            # Add the swap instruction to the transaction
+            # This is a placeholder - you'll need to implement actual DEX interaction
+            # using the appropriate program ID and instruction data
+            
+            # Sign and send the transaction
+            transaction.sign(self.wallet)
+            result = self.client.send_transaction(
+                transaction,
+                self.wallet,
+                opts=TxOpts(skip_confirmation=False, preflight_commitment=Confirmed)
             )
+            
             logging.info(f"Order placed: {side} {quantity} {self.symbol}")
-            return order
-        except BinanceAPIException as e:
+            return result
+        except Exception as e:
             logging.error(f"Error placing order: {e}")
             return None
 
@@ -134,7 +165,7 @@ class TradingBot:
         if not self.position or not self.entry_price:
             return
 
-        current_price = float(self.client.get_symbol_ticker(symbol=self.symbol)['price'])
+        current_price = self.get_current_price()
         price_change = (current_price - self.entry_price) / self.entry_price
 
         if self.position == 'BUY':
@@ -162,18 +193,14 @@ class TradingBot:
 
         try:
             # Get current position size
-            account = self.client.get_account()
-            for asset in account['balances']:
-                if asset['asset'] == self.symbol[:-4]:  # Remove USDT from symbol
-                    quantity = float(asset['free'])
-                    if quantity > 0:
-                        side = 'SELL' if self.position == 'BUY' else 'BUY'
-                        self.place_order(side, quantity)
-                        logging.info(f"Position closed: {side} {quantity} {self.symbol}")
-                        self.position = None
-                        self.entry_price = None
-                        break
-        except BinanceAPIException as e:
+            balance = self.get_account_balance()
+            if balance > 0:
+                side = 'SELL' if self.position == 'BUY' else 'BUY'
+                self.place_order(side, balance)
+                logging.info(f"Position closed: {side} {balance} {self.symbol}")
+                self.position = None
+                self.entry_price = None
+        except Exception as e:
             logging.error(f"Error closing position: {e}")
 
     def get_ml_signal(self, df):

@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chrollo AI Tradebot</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/fonts/bootstrap-icons.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -31,10 +29,9 @@
             background-color: var(--primary-dark);
             color: var(--text-light);
             font-family: 'Inter', sans-serif;
-            padding-top: 60px; /* Add padding for fixed navbar */
+            padding-top: 60px;
         }
 
-        /* Navigation Bar Styles */
         .navbar {
             background-color: var(--secondary-dark);
             border-bottom: 1px solid var(--accent-gold);
@@ -72,46 +69,6 @@
             border-bottom: 2px solid var(--accent-gold);
         }
 
-        /* Top Bar Styles */
-        .top-bar {
-            background-color: var(--secondary-dark);
-            border-bottom: 1px solid var(--accent-gold);
-            padding: 1rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--accent-gold);
-            text-decoration: none;
-        }
-
-        .logo i {
-            color: var(--neon-blue);
-        }
-
-        .status-badge {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-weight: 500;
-        }
-
-        .status-live {
-            background-color: rgba(0, 255, 0, 0.1);
-            color: #00ff00;
-            border: 1px solid #00ff00;
-        }
-
-        .status-offline {
-            background-color: rgba(255, 0, 0, 0.1);
-            color: #ff0000;
-            border: 1px solid #ff0000;
-        }
-
-        /* Card Styles */
         .card {
             background-color: var(--secondary-dark);
             border: 1px solid var(--accent-gold);
@@ -133,7 +90,6 @@
             margin: 0;
         }
 
-        /* Button Styles */
         .btn-primary {
             background-color: var(--accent-gold);
             border-color: var(--accent-gold);
@@ -155,7 +111,6 @@
             border-color: var(--accent-red);
         }
 
-        /* Chart Container */
         .chart-container {
             height: 400px;
             margin-bottom: 1.5rem;
@@ -165,7 +120,6 @@
             padding: 1rem;
         }
 
-        /* Table Styles */
         .table-dark {
             background-color: var(--secondary-dark);
             color: var(--text-light);
@@ -181,7 +135,6 @@
             border-color: rgba(191, 161, 74, 0.2);
         }
 
-        /* Form Controls */
         .form-control, .form-select {
             background-color: var(--primary-dark);
             border: 1px solid var(--accent-gold);
@@ -196,7 +149,6 @@
             box-shadow: 0 0 0 0.25rem rgba(0, 243, 255, 0.25);
         }
 
-        /* Notifications */
         .notification {
             padding: 1rem;
             border-radius: 8px;
@@ -219,12 +171,7 @@
             border-left-color: var(--accent-red);
         }
 
-        /* Mobile Responsive */
         @media (max-width: 768px) {
-            .top-bar {
-                padding: 0.5rem 0;
-            }
-
             .chart-container {
                 height: 300px;
             }
@@ -234,7 +181,6 @@
             }
         }
 
-        /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
             background: var(--secondary-dark);
@@ -244,15 +190,34 @@
             background: var(--accent-gold);
             border-radius: 4px;
         }
+
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+            color: white;
+        }
+        .dropdown-item-text {
+            color: #6c757d;
+        }
+        #accountDropdown:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
+    <div id="notifications-container" class="container mt-3"></div>
+
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">
-                <i class="bi bi-cpu"></i> Chrollo AI
-            </a>
+                        <i class="bi bi-cpu"></i> Chrollo AI
+                    </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -285,11 +250,11 @@
                         </ul>
                     </div>
                     <div class="dropdown">
-                        <button class="btn btn-primary dropdown-toggle" type="button" id="accountDropdown" data-bs-toggle="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="accountDropdown" data-bs-toggle="dropdown" disabled>
                             <i class="bi bi-person-circle"></i> Account
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
-                            <li><span class="dropdown-item-text">Balance: <span id="wallet-balance">0 ETH</span></span></li>
+                            <li><span class="dropdown-item-text">Balance: <span id="wallet-balance">0 SOL</span></span></li>
                             <li><span class="dropdown-item-text">Network: <span id="wallet-network">-</span></span></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/settings"><i class="bi bi-gear"></i> Settings</a></li>
@@ -302,7 +267,21 @@
     </nav>
 
     <div class="container-fluid py-4">
-        <!-- Portfolio Overview -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Bot Controls</h5>
+                    </div>
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <button id="start-bot-btn" class="btn btn-primary">Start Bot</button>
+                        <button id="stop-bot-btn" class="btn btn-danger">Stop Bot</button>
+                        <span id="bot-status-text" class="ms-3">Status: <span id="bot-status-value">Unknown</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card">
@@ -331,7 +310,6 @@
             </div>
         </div>
 
-        <!-- Recent Activity and Notifications -->
         <div class="row mb-4">
             <div class="col-md-8">
                 <div class="card">
@@ -365,14 +343,12 @@
                     </div>
                     <div class="card-body">
                         <div id="notifications">
-                            <!-- Notifications will be dynamically added here -->
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Market Data and Charts -->
         <div class="row">
             <div class="col-12">
                 <div class="card">
@@ -407,14 +383,93 @@
         </div>
     </div>
 
+    <!-- Load Bootstrap first -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <script src="https://unpkg.com/@solana/wallet-adapter-base@latest/lib/index.iife.min.js"></script>
-    <script src="https://unpkg.com/@solana/wallet-adapter-phantom@latest/lib/index.iife.min.js"></script>
+    
+    <!-- Load Solana scripts -->
+    <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
+
     <script>
+        let connection;
+        let wallet;
+        let currentAccount = null;
+
+        async function initSolana() {
+            try {
+                // Initialize Solana connection
+                connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'));
+                
+                // Check if Phantom is installed
+                if (!window.solana || !window.solana.isPhantom) {
+                    showPhantomInstallGuide();
+                    return;
+                }
+
+                // Connect to Phantom wallet
+                try {
+                    const resp = await window.solana.connect();
+                    console.log("Phantom connected:", resp);
+                    
+                    // Get the public key as a string
+                    const publicKey = resp.publicKey.toString();
+                    currentAccount = publicKey;
+                    
+                    // Get balance
+                    const balance = await connection.getBalance(new solanaWeb3.PublicKey(publicKey));
+                    const balanceSol = balance / solanaWeb3.LAMPORTS_PER_SOL;
+                    
+                    // Get network info
+                    const networkName = 'devnet'; // We're using devnet for now
+                    
+                    console.log("Wallet info:", {
+                        address: publicKey,
+                        balance: balanceSol,
+                        network: networkName
+                    });
+                    
+                    // Update UI
+                    updateWalletInfo({
+                        address: publicKey,
+                        balance: balanceSol,
+                        network: networkName
+                    });
+
+                    // Notify backend
+                    try {
+                        const response = await fetch('/api/wallet_connected', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ 
+                                address: publicKey,
+                                balance: balanceSol,
+                                network: networkName
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            showSuccess("Wallet connected successfully!");
+                        } else {
+                            showError(data.message || "Failed to connect wallet");
+                        }
+                    } catch (error) {
+                        console.error("Error connecting to backend:", error);
+                        showError("Connected to wallet but failed to sync with backend. Some features may be limited.");
+                    }
+                } catch (err) {
+                    console.error("Error connecting to Phantom:", err);
+                    showError("Failed to connect to Phantom wallet. Please try again.");
+                }
+            } catch (error) {
+                console.error("Error initializing Solana:", error);
+                showError("Failed to initialize Solana connection. Please try again.");
+            }
+        }
+
         // Initialize charts
         function initializeCharts() {
-            // Portfolio Chart
             const portfolioCtx = document.getElementById('portfolio-chart').getContext('2d');
             const portfolioChart = new Chart(portfolioCtx, {
                 type: 'doughnut',
@@ -444,7 +499,6 @@
                 }
             });
 
-            // Market Chart
             const marketCtx = document.getElementById('market-chart').getContext('2d');
             const marketChart = new Chart(marketCtx, {
                 type: 'line',
@@ -491,15 +545,10 @@
                 }
             });
 
-            // Store chart instances for updates
             window.portfolioChart = portfolioChart;
             window.marketChart = marketChart;
         }
 
-        // Initialize charts when the page loads
-        document.addEventListener('DOMContentLoaded', initializeCharts);
-
-        // Initialize update intervals
         let updateIntervals = {
             portfolio: null,
             marketData: null,
@@ -507,16 +556,18 @@
             notifications: null
         };
 
-        // Clear all update intervals
         function clearAllIntervals() {
             Object.values(updateIntervals).forEach(interval => {
                 if (interval) clearInterval(interval);
             });
         }
 
-        // Show error message
         function showError(message) {
             const notificationsContainer = document.getElementById('notifications-container');
+            if (!notificationsContainer) {
+                console.error('Notifications container not found');
+                return;
+            }
             const errorDiv = document.createElement('div');
             errorDiv.className = 'alert alert-danger alert-dismissible fade show';
             errorDiv.innerHTML = `
@@ -526,9 +577,12 @@
             notificationsContainer.insertBefore(errorDiv, notificationsContainer.firstChild);
         }
 
-        // Show success message
         function showSuccess(message) {
             const notificationsContainer = document.getElementById('notifications-container');
+            if (!notificationsContainer) {
+                console.error('Notifications container not found');
+                return;
+            }
             const successDiv = document.createElement('div');
             successDiv.className = 'alert alert-success alert-dismissible fade show';
             successDiv.innerHTML = `
@@ -538,47 +592,11 @@
             notificationsContainer.insertBefore(successDiv, notificationsContainer.firstChild);
         }
 
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                // Check API status first
-                const statusResponse = await fetch('/api/bot_status');
-                const statusData = await statusResponse.json();
-                
-                if (statusData.status === 'error') {
-                    showError(statusData.message || 'Failed to initialize API');
-                    return;
-                }
-                
-                // Start update intervals only if API is initialized
-                if (statusData.running !== undefined) {
-                    // Initialize update intervals
-                    updateIntervals.portfolio = setInterval(updatePortfolio, 5000);
-                    updateIntervals.marketData = setInterval(updateMarketData, 5000);
-                    updateIntervals.recentActivity = setInterval(updateRecentActivity, 5000);
-                    updateIntervals.notifications = setInterval(updateNotifications, 5000);
-                    
-                    // Initial updates
-                    updatePortfolio();
-                    updateMarketData();
-                    updateRecentActivity();
-                    updateNotifications();
-                } else {
-                    showError('API not properly initialized');
-                }
-            } catch (error) {
-                console.error('Error during initialization:', error);
-                showError('Failed to initialize application: ' + error.message);
-            }
-        });
-
-        // Update functions
         async function updateStatus() {
             try {
                 const response = await fetch('/api/bot_status');
                 const data = await response.json();
                 
-                // Update status badge
                 const statusBadge = document.getElementById('bot-status-badge');
                 if (data.running) {
                     statusBadge.className = 'status-badge status-live';
@@ -603,14 +621,11 @@
                 }
                 
                 if (data.status === 'success' && data.balances) {
-                    // Calculate total balance
                     const totalBalance = data.balances.reduce((sum, asset) => 
                         sum + parseFloat(asset.usdt_value || 0), 0);
                     
-                    // Update total balance display
                     document.getElementById('total-balance').textContent = totalBalance.toFixed(2);
                     
-                    // Update P&L if available
                     if (data.pnl_24h !== undefined) {
                         const pnlElement = document.getElementById('pnl-24h');
                         const pnlValue = parseFloat(data.pnl_24h);
@@ -618,12 +633,10 @@
                         pnlElement.className = `ms-2 ${pnlValue >= 0 ? 'text-success' : 'text-danger'}`;
                     }
                     
-                    // Update active trades count
                     if (data.active_trades !== undefined) {
                         document.getElementById('active-trades').textContent = data.active_trades;
                     }
 
-                    // Update portfolio chart
                     if (window.portfolioChart) {
                         const nonZeroBalances = data.balances.filter(asset => 
                             parseFloat(asset.usdt_value || 0) > 0
@@ -653,7 +666,6 @@
                 }
                 
                 if (data.status === 'success' && data.klines) {
-                    // Update market chart
                     if (window.marketChart) {
                         const chartData = data.klines.map(kline => ({
                             x: new Date(kline.timestamp),
@@ -664,7 +676,6 @@
                         window.marketChart.update();
                     }
 
-                    // Update market metrics
                     if (data.metrics) {
                         const metricsTable = document.getElementById('market-metrics');
                         metricsTable.innerHTML = '';
@@ -765,40 +776,222 @@
             }
         }
 
-        // Initialize Solana connection
-        let connection;
-        let wallet;
-        let currentAccount = null;
-
-        async function initSolana() {
+        async function connectWallet(address) {
             try {
-                // Initialize Solana connection
-                connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'));
+                const balance = await connection.getBalance(new solanaWeb3.PublicKey(address));
+                const balanceSol = balance / solanaWeb3.LAMPORTS_PER_SOL;
                 
-                // Check if Phantom is installed
+                const network = await connection.getVersion();
+                const networkName = {
+                    'mainnet-beta': 'Solana Mainnet',
+                    'testnet': 'Solana Testnet',
+                    'devnet': 'Solana Devnet'
+                }[network['solana-core']] || `Unknown Network (${network['solana-core']})`;
+
+                updateWalletInfo({
+                    address: address,
+                    balance: balanceSol,
+                    network: networkName
+                });
+
+                try {
+                const response = await fetch('/api/wallet_connected', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        address: address,
+                            balance: balanceSol,
+                        network: networkName
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showSuccess("Wallet connected successfully!");
+                } else {
+                    showError(data.message || "Failed to connect wallet");
+                    }
+                } catch (error) {
+                    console.error("Error connecting to backend:", error);
+                    showError("Connected to wallet but failed to sync with backend. Some features may be limited.");
+                }
+            } catch (error) {
+                console.error("Error connecting wallet:", error);
+                showError("Failed to connect wallet. Please try again.");
+            }
+        }
+
+        function updateWalletInfo(walletInfo) {
+            const balanceElement = document.getElementById('wallet-balance');
+            const networkElement = document.getElementById('wallet-network');
+            const walletDropdown = document.getElementById('walletDropdown');
+            const accountDropdown = document.getElementById('accountDropdown');
+            
+            if (walletInfo) {
+                // Update balance and network
+                balanceElement.textContent = `${walletInfo.balance.toFixed(4)} SOL`;
+                networkElement.textContent = walletInfo.network;
+                
+                // Update wallet button to show connected state
+                walletDropdown.innerHTML = `
+                    <i class="bi bi-wallet2"></i> ${walletInfo.address.slice(0, 4)}...${walletInfo.address.slice(-4)}
+                `;
+                walletDropdown.classList.add('btn-success');
+                walletDropdown.classList.remove('btn-primary');
+                
+                // Enable account dropdown
+                accountDropdown.disabled = false;
+            } else {
+                // Reset to default state
+                balanceElement.textContent = '0 SOL';
+                networkElement.textContent = '-';
+                
+                // Reset wallet button
+                walletDropdown.innerHTML = `
+                    <i class="bi bi-wallet2"></i> Connect Wallet
+                `;
+                walletDropdown.classList.add('btn-primary');
+                walletDropdown.classList.remove('btn-success');
+                
+                // Disable account dropdown
+                accountDropdown.disabled = true;
+            }
+        }
+
+        async function disconnectWallet() {
+            if (currentAccount) {
+                try {
+                    await window.solana.disconnect();
+                    const response = await fetch('/api/wallet_disconnected', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ address: currentAccount })
+                    });
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        currentAccount = null;
+                        updateWalletInfo(null);
+                        showSuccess("Wallet disconnected successfully!");
+                    } else {
+                        showError(data.message || "Failed to disconnect wallet");
+                    }
+                } catch (error) {
+                    console.error("Error disconnecting wallet:", error);
+                    showError("Failed to disconnect wallet. Please try again.");
+                }
+            }
+        }
+
+        async function updateBotStatusText() {
+            try {
+                const response = await fetch('/api/bot_status');
+                const data = await response.json();
+                const statusValue = document.getElementById('bot-status-value');
+                if (data.is_running) {
+                    statusValue.textContent = 'Running';
+                    statusValue.className = 'text-success';
+                } else {
+                    statusValue.textContent = 'Stopped';
+                    statusValue.className = 'text-danger';
+                }
+            } catch (error) {
+                console.error('Error updating bot status:', error);
+                document.getElementById('bot-status-value').textContent = 'Unknown';
+                document.getElementById('bot-status-value').className = 'text-warning';
+            }
+        }
+
+        document.getElementById('start-bot-btn').onclick = async function() {
+            try {
+                const requestBody = {
+                    wallet_address: currentAccount || null
+                };
+
+                const response = await fetch('/api/start_bot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to start bot');
+                }
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showSuccess('Bot started successfully');
+            } else {
+                    showError(data.error || 'Failed to start bot');
+                }
+                updateBotStatusText();
+            } catch (error) {
+                console.error('Error starting bot:', error);
+                showError(error.message || 'Failed to start bot. Please try again.');
+            }
+        };
+
+        document.getElementById('stop-bot-btn').onclick = async function() {
+            try {
+                const requestBody = {
+                    wallet_address: currentAccount || null
+                };
+
+                const response = await fetch('/api/stop_bot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to stop bot');
+                }
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showSuccess('Bot stopped successfully');
+                } else {
+                    showError(data.error || 'Failed to stop bot');
+                }
+                updateBotStatusText();
+            } catch (error) {
+                console.error('Error stopping bot:', error);
+                showError(error.message || 'Failed to stop bot. Please try again.');
+            }
+        };
+
+        document.getElementById('connect-phantom').addEventListener('click', async function(e) {
+            e.preventDefault();
+            try {
                 if (!window.solana || !window.solana.isPhantom) {
                     showPhantomInstallGuide();
                     return;
                 }
-
-                // Initialize Phantom wallet
-                wallet = new solanaWalletAdapterPhantom.PhantomWalletAdapter();
-                await wallet.connect();
-
-                if (wallet.connected) {
-                    currentAccount = wallet.publicKey.toString();
-                    await connectWallet(currentAccount);
-                }
-
-                // Set up event listeners
-                wallet.on('connect', handleWalletConnect);
-                wallet.on('disconnect', handleWalletDisconnect);
-                wallet.on('accountChanged', handleAccountChanged);
+                await initSolana();
             } catch (error) {
-                console.error("Error initializing Solana:", error);
-                showError("Failed to initialize Solana connection. Please try again.");
+                console.error("Error connecting to Phantom:", error);
+                showError("Failed to connect to Phantom wallet. Please try again.");
             }
-        }
+        });
+
+        document.getElementById('connect-solflare').addEventListener('click', async function(e) {
+            e.preventDefault();
+            showError("Solflare wallet support coming soon!");
+        });
+
+        document.getElementById('disconnect-wallet').addEventListener('click', async function(e) {
+            e.preventDefault();
+            await disconnectWallet();
+        });
 
         function showPhantomInstallGuide() {
             const notifications = document.getElementById('notifications');
@@ -823,7 +1016,6 @@
             `;
             notifications.insertBefore(guideDiv, notifications.firstChild);
 
-            // Disable wallet connection buttons
             const connectButtons = document.querySelectorAll('#connect-phantom, #connect-solflare');
             connectButtons.forEach(button => {
                 button.classList.add('disabled');
@@ -831,114 +1023,17 @@
             });
         }
 
-        async function handleWalletConnect() {
-            if (wallet.connected) {
-                currentAccount = wallet.publicKey.toString();
-                await connectWallet(currentAccount);
-            }
-        }
-
-        async function handleWalletDisconnect() {
-            await disconnectWallet();
-        }
-
-        async function handleAccountChanged(publicKey) {
-            if (publicKey) {
-                currentAccount = publicKey.toString();
-                await connectWallet(currentAccount);
-            } else {
-                await disconnectWallet();
-            }
-        }
-
-        async function connectWallet(address) {
-            try {
-                // Get wallet balance
-                const balance = await connection.getBalance(wallet.publicKey);
-                const balanceSol = balance / solanaWeb3.LAMPORTS_PER_SOL;
-                
-                // Get network information
-                const network = await connection.getVersion();
-                const networkName = {
-                    'mainnet-beta': 'Solana Mainnet',
-                    'testnet': 'Solana Testnet',
-                    'devnet': 'Solana Devnet'
-                }[network['solana-core']] || `Unknown Network (${network['solana-core']})`;
-
-                // Update UI first
-                updateWalletInfo({
-                    address: address,
-                    balance: balanceSol,
-                    network: networkName
-                });
-
-                try {
-                    // Send wallet info to backend
-                    const response = await fetch('/api/wallet_connected', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ 
-                            address: address,
-                            balance: balanceSol,
-                            network: networkName
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    if (data.status === 'success') {
-                        showSuccess("Wallet connected successfully!");
-                    } else {
-                        showError(data.message || "Failed to connect wallet");
-                    }
-                } catch (error) {
-                    console.error("Error connecting to backend:", error);
-                    showError("Connected to wallet but failed to sync with backend. Some features may be limited.");
-                }
-            } catch (error) {
-                console.error("Error connecting wallet:", error);
-                showError("Failed to connect wallet. Please try again.");
-            }
-        }
-
-        function updateWalletInfo(walletInfo) {
-            const balanceElement = document.getElementById('wallet-balance');
-            const networkElement = document.getElementById('wallet-network');
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            updateBotStatusText();
+            setInterval(updateBotStatusText, 5000);
             
-            if (walletInfo) {
-                balanceElement.textContent = `${walletInfo.balance} ETH`;
-                networkElement.textContent = walletInfo.network;
-            } else {
-                balanceElement.textContent = '0 ETH';
-                networkElement.textContent = '-';
+            // Check if Phantom is already connected
+            if (window.solana && window.solana.isPhantom && window.solana.isConnected) {
+                initSolana();
             }
-        }
-
-        async function disconnectWallet() {
-            if (currentAccount) {
-                try {
-                    const response = await fetch('/api/wallet_disconnected', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ address: currentAccount })
-                    });
-                    const data = await response.json();
-                    if (data.status === 'success') {
-                        currentAccount = null;
-                        updateWalletInfo(null);
-                        showSuccess("Wallet disconnected successfully!");
-                    } else {
-                        showError(data.message || "Failed to disconnect wallet");
-                    }
-                } catch (error) {
-                    console.error("Error disconnecting wallet:", error);
-                    showError("Failed to disconnect wallet. Please try again.");
-                }
-            }
-        }
+        });
     </script>
 </body>
 </html> 

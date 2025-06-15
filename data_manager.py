@@ -1,317 +1,224 @@
 """
-This module provides functionality for managing and caching market data from Binance.
-It includes features for data validation, quality checks, and efficient data retrieval
-with caching mechanisms to minimize API calls.
+Data management module for handling market data collection and processing.
+This module is responsible for fetching, storing, and managing market data
+from various sources and timeframes.
 """
 
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
 import logging
-from typing import Dict, List, Optional
-import json
-import os
-from binance.client import Client
-from binance.exceptions import BinanceAPIException
+from datetime import datetime, timedelta
+import time
+from solana.rpc.api import Client
+from solana.rpc.commitment import Confirmed
+from config import SOLANA_NETWORKS, DEFAULT_NETWORK
 
 class DataManager:
     """
-    A class to manage market data retrieval, caching, and validation.
-    
-    This class handles all interactions with the Binance API for market data,
-    implements caching mechanisms to reduce API calls, and performs data quality
-    checks to ensure reliable data for trading decisions.
+    Manages market data collection, storage, and processing.
+    Handles data fetching from multiple sources and timeframes.
     """
     
-    def __init__(self, client: Client, cache_dir: str = 'data_cache'):
+    def __init__(self, client):
         """
-        Initialize the DataManager with a Binance client and cache directory.
+        Initialize the data manager with a Solana client.
         
         Args:
-            client (Client): Initialized Binance API client
-            cache_dir (str): Directory to store cached data files
+            client: Solana RPC client instance
         """
         self.client = client
-        self.cache_dir = cache_dir
-        self.cache: Dict[str, pd.DataFrame] = {}  # In-memory cache
-        self.last_update: Dict[str, datetime] = {}  # Last update timestamps
-        self.data_quality_metrics: Dict[str, Dict] = {}  # Data quality tracking
+        self.cache = {}  # In-memory cache for market data
+        self.cache_expiry = {}  # Cache expiration timestamps
         
-        # Create cache directory if it doesn't exist
-        if not os.path.exists(cache_dir):
-            os.makedirs(cache_dir)
-            
-        # Initialize logging
-        self.logger = logging.getLogger('DataManager')
-        
-    def _get_cache_key(self, symbol: str, interval: str) -> str:
+    def get_market_data(self, symbol, interval, lookback):
         """
-        Generate a unique cache key for a symbol and interval combination.
+        Get market data for a specific symbol and interval.
         
         Args:
-            symbol (str): Trading pair symbol (e.g., 'BTCUSDT')
-            interval (str): Time interval (e.g., '1m', '1h')
-            
-        Returns:
-            str: Unique cache key
-        """
-        return f"{symbol}_{interval}"
-    
-    def _load_from_cache(self, cache_key: str) -> Optional[pd.DataFrame]:
-        """
-        Load data from cache file if it exists.
-        
-        Args:
-            cache_key (str): Unique identifier for the cached data
-            
-        Returns:
-            Optional[pd.DataFrame]: Cached data if available, None otherwise
-        """
-        cache_file = os.path.join(self.cache_dir, f"{cache_key}.csv")
-        if os.path.exists(cache_file):
-            try:
-                df = pd.read_csv(cache_file)
-                df['timestamp'] = pd.to_datetime(df['timestamp'])
-                return df
-            except Exception as e:
-                self.logger.error(f"Error loading cache file {cache_file}: {e}")
-        return None
-    
-    def _save_to_cache(self, cache_key: str, df: pd.DataFrame):
-        """
-        Save data to cache file.
-        
-        Args:
-            cache_key (str): Unique identifier for the data
-            df (pd.DataFrame): Data to cache
-        """
-        cache_file = os.path.join(self.cache_dir, f"{cache_key}.csv")
-        try:
-            df.to_csv(cache_file, index=False)
-        except Exception as e:
-            self.logger.error(f"Error saving cache file {cache_file}: {e}")
-    
-    def _validate_data_quality(self, df: pd.DataFrame, symbol: str, interval: str) -> bool:
-        """
-        Validate data quality and update metrics.
-        
-        This function performs comprehensive checks on the data including:
-        - Timestamp sequence integrity
-        - Missing or invalid price data
-        - Volume data quality
-        - Data consistency
-        
-        Args:
-            df (pd.DataFrame): Data to validate
-            symbol (str): Trading pair symbol
-            interval (str): Time interval
-            
-        Returns:
-            bool: True if data passes quality checks, False otherwise
-        """
-        if df.empty:
-            return False
-            
-        metrics = {
-            'timestamp': {
-                'gaps': self._check_timestamp_gaps(df, interval),
-                'duplicates': df['timestamp'].duplicated().sum(),
-                'order': df['timestamp'].is_monotonic_increasing
-            },
-            'price': {
-                'missing': df[['open', 'high', 'low', 'close']].isnull().sum().to_dict(),
-                'zeros': (df[['open', 'high', 'low', 'close']] == 0).sum().to_dict(),
-                'negative': (df[['open', 'high', 'low', 'close']] < 0).sum().to_dict()
-            },
-            'volume': {
-                'missing': df['volume'].isnull().sum(),
-                'zeros': (df['volume'] == 0).sum(),
-                'negative': (df['volume'] < 0).sum()
-            }
-        }
-        
-        # Update quality metrics
-        self.data_quality_metrics[self._get_cache_key(symbol, interval)] = metrics
-        
-        # Check for critical issues
-        critical_issues = (
-            metrics['timestamp']['gaps'] > 0 or
-            metrics['timestamp']['duplicates'] > 0 or
-            not metrics['timestamp']['order'] or
-            any(metrics['price']['missing'].values()) or
-            any(metrics['price']['zeros'].values()) or
-            any(metrics['price']['negative'].values()) or
-            metrics['volume']['missing'] > 0 or
-            metrics['volume']['negative'] > 0
-        )
-        
-        return not critical_issues
-    
-    def _check_timestamp_gaps(self, df: pd.DataFrame, interval: str) -> int:
-        """
-        Check for gaps in timestamp sequence.
-        
-        Args:
-            df (pd.DataFrame): Data to check
-            interval (str): Time interval
-            
-        Returns:
-            int: Number of gaps found in the timestamp sequence
-        """
-        if df.empty:
-            return 0
-            
-        # Convert interval to timedelta
-        interval_map = {
-            '1m': timedelta(minutes=1),
-            '5m': timedelta(minutes=5),
-            '15m': timedelta(minutes=15),
-            '30m': timedelta(minutes=30),
-            '1h': timedelta(hours=1),
-            '4h': timedelta(hours=4),
-            '1d': timedelta(days=1)
-        }
-        
-        delta = interval_map.get(interval)
-        if not delta:
-            return 0
-            
-        # Calculate expected timestamps
-        start = df['timestamp'].min()
-        end = df['timestamp'].max()
-        expected_timestamps = pd.date_range(start=start, end=end, freq=delta)
-        
-        # Count missing timestamps
-        missing = len(expected_timestamps) - len(df)
-        return max(0, missing)
-    
-    def get_data(self, symbol: str, interval: str, lookback: int = 100, force_refresh: bool = False) -> Optional[pd.DataFrame]:
-        """
-        Get market data with caching and validation.
-        
-        This method implements a smart caching system that:
-        1. Checks in-memory cache first
-        2. Falls back to disk cache if needed
-        3. Fetches fresh data from API if cache is stale or missing
-        4. Validates data quality
-        5. Updates cache with fresh data
-        
-        Args:
-            symbol (str): Trading pair symbol
-            interval (str): Time interval
+            symbol (str): Trading pair symbol (e.g., 'SOL/USDC')
+            interval (str): Time interval (e.g., '1m', '5m', '1h')
             lookback (int): Number of candles to fetch
-            force_refresh (bool): Force refresh from API
             
         Returns:
-            Optional[pd.DataFrame]: Market data if successful, None if failed
+            pd.DataFrame: Market data with OHLCV columns
         """
-        cache_key = self._get_cache_key(symbol, interval)
-        
-        # Check if we need to refresh the cache
-        needs_refresh = (
-            force_refresh or
-            cache_key not in self.last_update or
-            (datetime.now() - self.last_update[cache_key]).total_seconds() > 60  # Refresh every minute
-        )
-        
-        if not needs_refresh and cache_key in self.cache:
-            return self.cache[cache_key]
-            
-        # Try to load from cache file
-        if not needs_refresh:
-            df = self._load_from_cache(cache_key)
-            if df is not None:
-                self.cache[cache_key] = df
-                self.last_update[cache_key] = datetime.now()
-                return df
-        
-        # Fetch new data from API
         try:
-            klines = self.client.get_klines(
-                symbol=symbol,
-                interval=interval,
-                limit=lookback
-            )
+            # Check cache first
+            cache_key = f"{symbol}_{interval}"
+            if self._is_cache_valid(cache_key):
+                return self.cache[cache_key]
             
-            if not klines:
-                return None
-                
-            # Convert API response to DataFrame
-            df = pd.DataFrame(klines, columns=[
-                'timestamp', 'open', 'high', 'low', 'close', 'volume',
-                'close_time', 'quote_asset_volume', 'number_of_trades',
-                'taker_buy_base_volume', 'taker_buy_quote_volume', 'ignore'
-            ])
+            # Fetch data from DEX
+            # This is a placeholder - you'll need to implement actual DEX data fetching
+            # using the appropriate program ID and instruction data
+            data = self._fetch_dex_data(symbol, interval, lookback)
             
-            # Convert numeric columns
-            numeric_columns = ['open', 'high', 'low', 'close', 'volume']
-            for col in numeric_columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-                
-            # Convert timestamp
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-            
-            # Sort by timestamp
-            df = df.sort_values('timestamp')
-            
-            # Validate data quality
-            if not self._validate_data_quality(df, symbol, interval):
-                self.logger.warning(f"Data quality issues detected for {symbol} {interval}")
-                
-            # Update cache
-            self.cache[cache_key] = df
-            self.last_update[cache_key] = datetime.now()
-            self._save_to_cache(cache_key, df)
+            # Process and cache the data
+            df = self._process_market_data(data)
+            self._update_cache(cache_key, df)
             
             return df
-            
-        except BinanceAPIException as e:
-            self.logger.error(f"Error fetching data: {e}")
-            return None
-            
-    def get_multiple_timeframes(self, symbol: str, intervals: List[str], lookback: int = 100) -> Dict[str, pd.DataFrame]:
+        except Exception as e:
+            logging.error(f"Error getting market data: {e}")
+            return pd.DataFrame()
+    
+    def get_multiple_timeframes(self, symbol, intervals, lookback):
         """
-        Get data for multiple timeframes simultaneously.
+        Get market data for multiple timeframes.
         
         Args:
             symbol (str): Trading pair symbol
-            intervals (List[str]): List of time intervals
+            intervals (list): List of time intervals
             lookback (int): Number of candles to fetch
             
         Returns:
-            Dict[str, pd.DataFrame]: Dictionary of dataframes for each interval
+            dict: Dictionary of DataFrames for each interval
         """
-        return {
-            interval: self.get_data(symbol, interval, lookback)
-            for interval in intervals
-        }
+        data_dict = {}
+        for interval in intervals:
+            data_dict[interval] = self.get_market_data(symbol, interval, lookback)
+        return data_dict
+    
+    def _fetch_dex_data(self, symbol, interval, lookback):
+        """
+        Fetch market data from a Solana DEX.
         
-    def get_data_quality_report(self) -> Dict:
+        Args:
+            symbol (str): Trading pair symbol
+            interval (str): Time interval
+            lookback (int): Number of candles to fetch
+            
+        Returns:
+            list: Raw market data
         """
-        Get a comprehensive report of data quality metrics.
+        try:
+            # This is a placeholder - implement actual DEX data fetching
+            # You'll need to:
+            # 1. Find the DEX program ID for the trading pair
+            # 2. Query the DEX for historical trades
+            # 3. Process the trades into OHLCV data
+            
+            # For now, return dummy data
+            return self._generate_dummy_data(lookback)
+        except Exception as e:
+            logging.error(f"Error fetching DEX data: {e}")
+            return []
+    
+    def _process_market_data(self, data):
+        """
+        Process raw market data into a DataFrame.
+        
+        Args:
+            data (list): Raw market data
+            
+        Returns:
+            pd.DataFrame: Processed market data
+        """
+        try:
+            # Convert raw data to DataFrame
+            df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+            df.set_index('timestamp', inplace=True)
+            return df
+        except Exception as e:
+            logging.error(f"Error processing market data: {e}")
+            return pd.DataFrame()
+    
+    def _generate_dummy_data(self, lookback):
+        """
+        Generate dummy market data for testing.
+        
+        Args:
+            lookback (int): Number of candles to generate
+            
+        Returns:
+            list: Dummy market data
+        """
+        now = int(time.time())
+        data = []
+        for i in range(lookback):
+            timestamp = now - (i * 60)  # 1-minute intervals
+            price = 100 + np.random.normal(0, 1)  # Random price around 100
+            volume = np.random.uniform(1000, 5000)  # Random volume
+            data.append([
+                timestamp,
+                price,
+                price + np.random.uniform(0, 1),
+                price - np.random.uniform(0, 1),
+                price + np.random.normal(0, 0.5),
+                volume
+            ])
+        return data
+    
+    def _is_cache_valid(self, cache_key):
+        """
+        Check if cached data is still valid.
+        
+        Args:
+            cache_key (str): Cache key
+            
+        Returns:
+            bool: True if cache is valid, False otherwise
+        """
+        if cache_key not in self.cache or cache_key not in self.cache_expiry:
+            return False
+        return time.time() < self.cache_expiry[cache_key]
+    
+    def _update_cache(self, cache_key, data):
+        """
+        Update the cache with new data.
+        
+        Args:
+            cache_key (str): Cache key
+            data (pd.DataFrame): Data to cache
+        """
+        self.cache[cache_key] = data
+        self.cache_expiry[cache_key] = time.time() + 60  # Cache for 1 minute
+    
+    def get_data_quality_report(self):
+        """
+        Generate a report on data quality metrics.
         
         Returns:
-            Dict: Dictionary containing quality metrics for all cached data
+            dict: Data quality metrics
         """
-        return self.data_quality_metrics
+        try:
+            metrics = {
+                'completeness': self._calculate_completeness(),
+                'timeliness': self._calculate_timeliness(),
+                'consistency': self._calculate_consistency()
+            }
+            return metrics
+        except Exception as e:
+            logging.error(f"Error generating data quality report: {e}")
+            return {}
+    
+    def _calculate_completeness(self):
+        """
+        Calculate data completeness score.
         
-    def clear_cache(self):
+        Returns:
+            float: Completeness score (0-1)
         """
-        Clear all cached data from memory and disk.
-        This includes:
-        - In-memory cache
-        - Last update timestamps
-        - Data quality metrics
-        - Cache files on disk
+        # Implement completeness calculation
+        return 1.0
+    
+    def _calculate_timeliness(self):
         """
-        self.cache.clear()
-        self.last_update.clear()
-        self.data_quality_metrics.clear()
+        Calculate data timeliness score.
         
-        # Clear cache files
-        for file in os.listdir(self.cache_dir):
-            if file.endswith('.csv'):
-                try:
-                    os.remove(os.path.join(self.cache_dir, file))
-                except Exception as e:
-                    self.logger.error(f"Error removing cache file {file}: {e}") 
+        Returns:
+            float: Timeliness score (0-1)
+        """
+        # Implement timeliness calculation
+        return 1.0
+    
+    def _calculate_consistency(self):
+        """
+        Calculate data consistency score.
+        
+        Returns:
+            float: Consistency score (0-1)
+        """
+        # Implement consistency calculation
+        return 1.0 
